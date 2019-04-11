@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TrussMat</title>
+</head>
+
+<head>
+    <style type="text/css">
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <h1> TrussMat </h1>
+    <p id="lengthText"> Length: </p>
+    <p id="angleText"> Angle: </p>
+    <canvas id="newCanvas" width="800" height="500"></canvas>
+    <br>
+
+    <button onclick="memberPinActivate()"> ⏹️ Joint-Member </button>
+    <button onclick="pinActivate()"> 🔺 Pin </button>
+    <button onclick="rollerActivate()"> 🔴 Roller </button>
+    <button onclick="removeActivate()"> ❌ Remove Element </button>
+    <button> ▶️ Solve Truss </button>
+
+    <script src="createLines.js"></script>
+</body>
+
+</html>
