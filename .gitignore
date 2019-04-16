@@ -2,5 +2,5 @@
 *.doc
 *.txt
 *.json
-vscode
+.vscode
 trusssolver.js
