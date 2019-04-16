@@ -9,4 +9,4 @@ As an Engineering Science student myself, I found this project to be quite tedio
 While there are several existing online truss solvers, they come with several disadvantages. The most powerful truss solver that I know of is [SkyCiv](https://skyciv.com/), but downloading the software does cost money. Other softwares such as [Fast Truss Solver](https://www.microsoft.com/en-us/p/fast-truss-solver/9pc290v41k2q) are difficult to use and do not have all the features required for the project. A past EngSci student, Steven He, has also created an [truss bridge solver](http://engsci.stevenhe.com/trusssolver2) but is, functionality-wise, limited. TrussMat looks to resolve all of the aforementioned issues.
 
 ## Acknowledgements
-Thank you to my TAs Allan Kuan and Brittany Yap for their wonderful CIV102 notes as they were key to creating this project.
+Thank you to my TAs Allan Kuan and Brittany Yap for their wonderful CIV102 notes as they were key to developing the program.
