@@ -102,5 +102,3 @@ function print(M, msg) {
   print(b, " b ");
   
   var x = solve(A, b);
-  
-  print(x, " x ");

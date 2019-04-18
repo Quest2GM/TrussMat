@@ -24,11 +24,13 @@ let endY;                  //Stores the end y-coordinate of the joint
 let mousePos;              //Gets the x and y coordinate of the user's cursor at a specific instance
 let length;                //The length of the joint that is created in metres
 let angle;                 //The acute angle to the horizontal of the joint-member in degrees
-let actualSize = 60;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
+let actualSize = 20;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
 
 //Paragraph Changer Variables
 let lengthText = document.getElementById("lengthText");     //Text updates to the screen regarding the current length of the member-joint
 let angleText = document.getElementById("angleText");       //Text updater to the screen regarding the curring angle of the member-joint
+let posXText = document.getElementById("posX");
+let posYText = document.getElementById("posY");
 
 //Member Property Variables
 let newMember;           //When a new member is created with its respective constructor, it is stored in this variable
@@ -279,10 +281,18 @@ function createMember() {
         newMember = new Member(startX, startY, endX, endY, length, angle);
         memberArray.push(newMember);
         newJoint = new Joint(startX, startY, numMember, startJointVisible);
-        jointArray.push(newJoint);
+        if (startJointVisible == true){
+            jointArray.push(newJoint);
+            typeHistory.push("J");
+        }
         newJoint = new Joint(endX, endY, numMember, endJointVisible);
-        jointArray.push(newJoint);
-
+        if (endJointVisible == true){
+            jointArray.push(newJoint);
+            typeHistory.push("J");
+        }
+        typeHistory.push("M");
+        console.log(memberArray);
+        console.log(jointArray);
         //Length and Angle Updates to the Screen
         lengthText.textContent = "Length: " + length + " m";
         angleText.textContent = "Angle: " + angle + " deg";
@@ -373,21 +383,48 @@ function undoLast(){
             rollerArray.pop();
         } else if (typeHistory[typeHistory.length-1] == "L"){
             loadArray.pop();
+        } else if (typeHistory[typeHistory.length-1] == "M"){
+            memberArray.pop();
+            if (typeHistory[typeHistory.length-2] == "J"){
+                jointArray.pop();
+                typeHistory.pop();
+            }
+            if (typeHistory[typeHistory.length-2] == "J"){
+                jointArray.pop();
+                typeHistory.pop();
+            }
         }
         typeHistory.pop();
     }
+    console.log(typeHistory);
+    console.log(memberArray);
+    console.log(jointArray);
+    console.log(pinArray);
+    console.log(rollerArray);
+    console.log(loadArray);
 }
 function removeActivate() {
-    copyLast();
     context.clearRect(0, 0, canvas.width, canvas.height);
     lengthText.textContent = "Length:";
     angleText.textContent = "Angle:";
+    memberArray = [];
+    jointArray = [];
     pinArray = [];
     rollerArray = [];
     loadArray = [];
+    console.log(typeHistory);
+    console.log(memberArray);
+    console.log(jointArray);
+    console.log(pinArray);
+    console.log(rollerArray);
+    console.log(loadArray);
 }
 function solveTruss(){
-    return 0;
+    if (memberArray.length + 2*(pinArray.length) + rollerArray.length === 2*(jointArray.length)){
+        console.log("Statically Determinate!");
+    } else {
+        console.log("Statically Indeterminate!");
+    }
 }
 
 //Active Run Code
@@ -410,6 +447,7 @@ canvas.addEventListener("mousedown", (event) => {
                 typeHistory.push("P");
                 newPin = new Pin(currX, currY);
                 pinArray.push(newPin);
+                console.log(pinArray);
             }
         }
     } else if (rollerButtonActive) {
@@ -424,6 +462,7 @@ canvas.addEventListener("mousedown", (event) => {
                 typeHistory.push("R");
                 newRoller = new Roller(currX, currY);
                 rollerArray.push(newRoller);
+                console.log(rollerArray);
             }
         }
     } else if (loadButtonActive) {
@@ -438,6 +477,7 @@ canvas.addEventListener("mousedown", (event) => {
                 typeHistory.push("L");
                 newLoad = new Load(currX, currY, 1000);
                 loadArray.push(newLoad);
+                console.log(loadArray);
             }
         }
     }
@@ -445,12 +485,15 @@ canvas.addEventListener("mousedown", (event) => {
 
 canvas.addEventListener("mousemove", (event) => {
     mousePos = getMousePos(event);
+
     if (memberJointButtonActive) {
         if (lineBegin) {
             restoreSnapShot();
             tempMember(mousePos.x, mousePos.y);
         }
     }
+    posXText.textContent = "X: " + mousePos.x;
+    posYText.textContent = "Y: " + mousePos.y;
     //checkPins(mousePos.x, mousePos.y);
     //checkRollers(mousePos.x, mousePos.y);
     //checkJoints(mousePos.x, mousePos.y);
