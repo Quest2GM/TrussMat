@@ -56,6 +56,9 @@ let rollerArray = [];   //newRoller is immediately stored in this array
 let currX;              //Stores the x-coordinate if the user clicks in a joint to add a support
 let currY;              //Stores the y-coordinate if the user clicks in a joint to add a support
 
+//Undo History
+let undoHistory = [];   //For the undo button functionality.
+
 //Constructor Function to build new members, joints, pins and rollers
 function Member(startX, startY, endX, endY, length, angle) {
     this.startX = startX;
@@ -200,6 +203,11 @@ function restoreSnapShot() {
     context.putImageData(snapShot, 0, 0);
 }
 
+//Undo Function
+function copyLast(){
+    undoHistory.push(context.getImageData(0, 0, canvas.width, canvas.height));
+}
+
 //Function to Reset for Next Iteration
 function reset() {
     numMember++;
@@ -215,6 +223,7 @@ function createMember() {
         lineBegin = true;
         startX = mousePos.x;
         startY = mousePos.y;
+        copyLast();
         if (inJoint()) {
             tempJoint(currStartX, currStartY, "#909696");
         } else {
@@ -244,6 +253,7 @@ function createMember() {
         angle = calcAngle(endY, startY, endX, startX);
 
         //Create and Store New Members and Joints
+
         newMember = new Member(startX, startY, endX, endY, length, angle);
         memberArray.push(newMember);
         newJoint = new Joint(startX, startY, numMember, startJointVisible);
@@ -294,7 +304,7 @@ function checkJoints(mouseX, mouseY) {
     }
 }
 
-//Activation Functions
+//Activation and Button Functions
 function memberPinActivate() {
     pinButtonActive = false;
     rollerButtonActive = false;
@@ -321,15 +331,19 @@ function rollerActivate() {
         removeButtonActive = false;
     }
 }
-function removeActivate() {
-    if (lineBegin) {
-        console.log("You must first finish creating the current member!");
-    } else {
-        pinButtonActive = false;
-        rollerButtonActive = false;
-        memberJointButtonActive = false;
-        removeButtonActive = true;
+function undoLast(){
+    if (undoHistory.length > 0){
+        context.putImageData(undoHistory[undoHistory.length-1],0,0);
+        undoHistory.pop();
     }
+}
+function removeActivate() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    lengthText.textContent = "Length:";
+    angleText.textContent = "Angle:";
+}
+function solveTruss(){
+    return 0;
 }
 
 //Active Run Code
@@ -341,11 +355,13 @@ canvas.addEventListener("mousedown", (event) => {
         createMember();
     } else if (pinButtonActive) {
         if (inJoint()) {
+            copyLast();
             newPin = new Pin(currX, currY);
             pinArray.push(newPin);
         }
     } else if (rollerButtonActive) {
         if (inJoint()) {
+            copyLast();
             newRoller = new Roller(currX, currY);
             rollerArray.push(newRoller);
         }
@@ -360,7 +376,7 @@ canvas.addEventListener("mousemove", (event) => {
             tempMember(mousePos.x, mousePos.y);
         }
     }
-    checkPins(mousePos.x, mousePos.y);
-    checkRollers(mousePos.x, mousePos.y);
-    checkJoints(mousePos.x, mousePos.y);
+    //checkPins(mousePos.x, mousePos.y);
+    //checkRollers(mousePos.x, mousePos.y);
+    //checkJoints(mousePos.x, mousePos.y);
 });

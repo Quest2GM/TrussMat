@@ -23,11 +23,12 @@
     <canvas id="newCanvas" width="800" height="500"></canvas>
     <br>
 
-    <button onclick="memberPinActivate()"> ⏹️ Joint-Member </button>
-    <button onclick="pinActivate()"> 🔺 Pin </button>
-    <button onclick="rollerActivate()"> 🔴 Roller </button>
-    <button onclick="removeActivate()"> ❌ Remove Element </button>
-    <button> ▶️ Solve Truss </button>
+    <button style="height:25px; width:130px", onclick = "memberPinActivate()"> ⏹️ Joint-Member </button>
+    <button style="height:25px; width:130px", onclick = "pinActivate()"> 🔺 Pin </button>
+    <button style="height:25px; width:130px", onclick = "rollerActivate()"> 🔴 Roller </button>
+    <button style="height:25px; width:130px", onclick = "undoLast()"> ↩️ Undo </button>
+    <button style="height:25px; width:130px", onclick = "removeActivate()"> ❌ Clear All </button>
+    <button style="height:25px; width:130px", onclick = "solveTruss()"> ▶️ Solve Truss </button>
 
     <script src="main.js"></script>
 </body>
