@@ -86,6 +86,10 @@ function Joint(posX, posY, numMember, visible) {
     this.visible = visible;
     this.radius = 10;
     this.colour = "#909696";
+    this.jointLabel = "";
+    this.hasPin = false;
+    this.hasRoller = false;
+    this.hasLoad = false;
 
     context.beginPath();
     context.moveTo(this.posX, this.posY);
@@ -424,7 +428,97 @@ function solveTruss(){
         console.log("Statically Determinate!");
     } else {
         console.log("Statically Indeterminate!");
+        return;
     }
+    let count = 0;
+    if (loadArray.length == 0)
+        console.log("Add a load!");
+    else {
+        let A = [];
+        for (let i of jointArray.sort(function(a,b) { return a.posX-b.posX; })){
+            i.jointLabel = getAlphabet(count);
+            context.font = "bold 14px Cambria";
+            context.fillStyle = "white";
+            context.fillText(i.jointLabel, i.posX-5, i.posY+5);
+            A.push([]);
+            A.push([]);
+            count++;
+        }
+        for (let i of jointArray){
+            for (let j of pinArray){
+                if (i.posX == j.posX && i.posY == j.posY){
+                    i.hasPin = true;
+                }
+            }
+            for (let j of rollerArray){
+                if (i.posX == j.posX && i.posY == j.posY){
+                    i.hasRoller = true;
+                }
+            }
+            for (let j of loadArray){
+                if (i.posX == j.posX && i.posY == j.posY){
+                    i.hasLoad = true;
+                }
+            }
+        }
+        console.log(jointArray);
+    }
+}
+function getAlphabet(count){
+    if (count == 0)
+        return "A";
+    else if (count == 1)
+        return "B";
+    else if (count == 2)
+        return "C";
+    else if (count == 3)
+        return "D";
+    else if (count == 4)
+        return "E";
+    else if (count == 5)
+        return "F";
+    else if (count == 6)
+        return "G";
+    else if (count == 7)
+        return "H";
+    else if (count == 8)
+        return "I";
+    else if (count == 9)
+        return "J";
+    else if (count == 10)
+        return "K";
+    else if (count == 11)
+        return "L";
+    else if (count == 12)
+        return "M";
+    else if (count == 13)
+        return "N";
+    else if (count == 14)
+        return "O";
+    else if (count == 15)
+        return "P";
+    else if (count == 16)
+        return "Q";
+    else if (count == 17)
+        return "R";
+    else if (count == 18)
+        return "S";
+    else if (count == 19)
+        return "T";
+    else if (count == 20)
+        return "U";
+    else if (count == 21)
+        return "V";
+    else if (count == 22)
+        return "W";
+    else if (count == 23)
+        return "X";
+    else if (count == 24)
+        return "Y";
+    else if (count == 25)
+        return "Z";
+    else
+        return "*";
 }
 
 //Active Run Code
@@ -437,6 +531,11 @@ canvas.addEventListener("mousedown", (event) => {
         createMember();
     } else if (pinButtonActive) {
         if (inJoint()) {
+            for (let elem of rollerArray){ //Checks if there is already a roller at the current click location
+                if (elem.posX == currX && elem.posY == currY){
+                    check = 1;
+                }
+            }
             for (let elem of pinArray){ //Checks if there is already a pin at the current click location
                 if (elem.posX == currX && elem.posY == currY){
                     check = 1;
@@ -453,6 +552,11 @@ canvas.addEventListener("mousedown", (event) => {
     } else if (rollerButtonActive) {
         if (inJoint()) {
             for (let elem of rollerArray){ //Checks if there is already a roller at the current click location
+                if (elem.posX == currX && elem.posY == currY){
+                    check = 1;
+                }
+            }
+            for (let elem of pinArray){ //Checks if there is already a pin at the current click location
                 if (elem.posX == currX && elem.posY == currY){
                     check = 1;
                 }
