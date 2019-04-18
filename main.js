@@ -14,7 +14,7 @@ let snapShot;                                       //Used to prevent multiple l
 let memberJointButtonActive = false;  //True if the user has clicked the member pin button
 let pinButtonActive = false;          //True if the user has clicked the pin button
 let rollerButtonActive = false;       //True if the user has clicked the roller button
-let removeButtonActive = false;       //True if the user has clicked the remove button
+let loadButtonActive = false;       //True if the user has clicked the remove button
 
 //Line Property Variables
 let lineBegin = false;     //This indicates whether the user has begun creating the member-joint line or not
@@ -53,13 +53,15 @@ let newPin;             //When a new pin is created, it is stored here
 let pinArray = [];      //newPin is immediately stored in this array
 let newRoller;          //When a new roller is created, it is stored here
 let rollerArray = [];   //newRoller is immediately stored in this array
+let newLoad;            //When a new load is created, it is stored here
+let loadArray = [];     //newLoad is immediately stored in this array
 let currX;              //Stores the x-coordinate if the user clicks in a joint to add a support
 let currY;              //Stores the y-coordinate if the user clicks in a joint to add a support
 
 //Undo History
 let undoHistory = [];   //For the undo button functionality.
 
-//Constructor Function to build new members, joints, pins and rollers
+//Constructor Function to build new members, joints, pins loads and rollers
 function Member(startX, startY, endX, endY, length, angle) {
     this.startX = startX;
     this.startY = startY;
@@ -109,6 +111,23 @@ function Roller(posX, posY) {
     context.arc(this.posX, this.posY + 18, 17, 0, 7);
     context.fillStyle = "#ff0003";
     context.fill();
+}
+function Load(posX, posY){
+    this.posX = posX;
+    this.posY = posY;
+    this.mag = 10;
+
+    context.beginPath();
+    context.moveTo(this.posX, this.posY);
+    context.lineTo(this.posX, this.posY+50);
+    context.moveTo(this.posX, this.posY+49);
+    context.lineTo(this.posX-10, this.posY+39);
+    context.moveTo(this.posX, this.posY+49);
+    context.lineTo(this.posX+10, this.posY+39);
+    context.fillStyle = "black";
+    context.fillRect(this.posX-2, this.posY+47, 4, 4);
+    context.strokeStyle = "black";
+    context.stroke();
 }
 
 //Temporary Creations for a Member and Joints
@@ -309,7 +328,7 @@ function memberPinActivate() {
     pinButtonActive = false;
     rollerButtonActive = false;
     memberJointButtonActive = true;
-    removeButtonActive = false;
+    loadButtonActive = false;
 }
 function pinActivate() {
     if (lineBegin) {
@@ -318,7 +337,7 @@ function pinActivate() {
         pinButtonActive = true;
         rollerButtonActive = false;
         memberJointButtonActive = false;
-        removeButtonActive = false;
+        loadButtonActive = false;
     }
 }
 function rollerActivate() {
@@ -328,7 +347,17 @@ function rollerActivate() {
         pinButtonActive = false;
         rollerButtonActive = true;
         memberJointButtonActive = false;
-        removeButtonActive = false;
+        loadButtonActive = false;
+    }
+}
+function loadActivate(){
+    if (lineBegin){
+        console.log("You must first finish creating the current member!");
+    } else {
+        pinButtonActive = false;
+        rollerButtonActive = false;
+        memberJointButtonActive = false;
+        loadButtonActive = true;
     }
 }
 function undoLast(){
@@ -341,6 +370,10 @@ function removeActivate() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     lengthText.textContent = "Length:";
     angleText.textContent = "Angle:";
+    pinArray = [];
+    rollerArray = [];
+    loadArray = [];
+    undoHistory = [];
 }
 function solveTruss(){
     return 0;
@@ -351,19 +384,47 @@ function solveTruss(){
 
 canvas.addEventListener("mousedown", (event) => {
     mousePos = getMousePos(event);
+    let check = 0;
     if (memberJointButtonActive) {
         createMember();
     } else if (pinButtonActive) {
         if (inJoint()) {
-            copyLast();
-            newPin = new Pin(currX, currY);
-            pinArray.push(newPin);
+            for (let elem of pinArray){ //Checks if there is already a pin at the current click location
+                if (elem.posX == currX && elem.posY == currY){
+                    check = 1;
+                }
+            }
+            if (check == 0){
+                copyLast();
+                newPin = new Pin(currX, currY);
+                pinArray.push(newPin);
+            }
         }
     } else if (rollerButtonActive) {
         if (inJoint()) {
-            copyLast();
-            newRoller = new Roller(currX, currY);
-            rollerArray.push(newRoller);
+            for (let elem of rollerArray){ //Checks if there is already a roller at the current click location
+                if (elem.posX == currX && elem.posY == currY){
+                    check = 1;
+                }
+            }
+            if (check == 0){
+                copyLast();
+                newRoller = new Roller(currX, currY);
+                rollerArray.push(newRoller);
+            }
+        }
+    } else if (loadButtonActive) {
+        if (inJoint()) {
+            for (let elem of loadArray){ //Checks if there is already a load at the current click location
+                if (elem.posX == currX && elem.posY == currY){
+                    check = 1;
+                }
+            }
+            if (check == 0){
+                copyLast();
+                newLoad = new Load(currX, currY);
+                loadArray.push(newLoad);
+            }
         }
     }
 });
