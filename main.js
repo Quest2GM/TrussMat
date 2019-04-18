@@ -1,7 +1,6 @@
 /* Project One: TrussMat
     This project was started an initated by Siddarth Narasimhan, begun on December 21st, 2018. The goal of this project is to help First Year Engineering Science students with the first bridge project they must complete in CIV102, a civil engineering stuctures course. This truss solver solves statically determinate truss bridges with the method of joints, solves the virtual truss, gives you the best possible HSS configuration and outputs all data in a table.
 */
-
 "use strict";   //Helpful for debugging
 
 //Canvas Variables
@@ -60,6 +59,7 @@ let currY;              //Stores the y-coordinate if the user clicks in a joint 
 
 //Undo History
 let undoHistory = [];   //For the undo button functionality.
+let typeHistory = [];   //To track what was added to the canvas
 
 //Constructor Function to build new members, joints, pins loads and rollers
 function Member(startX, startY, endX, endY, length, angle) {
@@ -112,10 +112,10 @@ function Roller(posX, posY) {
     context.fillStyle = "#ff0003";
     context.fill();
 }
-function Load(posX, posY){
+function Load(posX, posY, mag){
     this.posX = posX;
     this.posY = posY;
-    this.mag = 10;
+    this.mag = mag;
 
     context.beginPath();
     context.moveTo(this.posX, this.posY);
@@ -128,6 +128,9 @@ function Load(posX, posY){
     context.fillRect(this.posX-2, this.posY+47, 4, 4);
     context.strokeStyle = "black";
     context.stroke();
+    context.font = "18px Cambria";
+    context.fillStyle = "black";
+    context.fillText(this.mag + " kN", this.posX-30, this.posY+70);
 }
 
 //Temporary Creations for a Member and Joints
@@ -364,16 +367,24 @@ function undoLast(){
     if (undoHistory.length > 0){
         context.putImageData(undoHistory[undoHistory.length-1],0,0);
         undoHistory.pop();
+        if (typeHistory[typeHistory.length-1] == "P"){
+            pinArray.pop();
+        } else if (typeHistory[typeHistory.length-1] == "R"){
+            rollerArray.pop();
+        } else if (typeHistory[typeHistory.length-1] == "L"){
+            loadArray.pop();
+        }
+        typeHistory.pop();
     }
 }
 function removeActivate() {
+    copyLast();
     context.clearRect(0, 0, canvas.width, canvas.height);
     lengthText.textContent = "Length:";
     angleText.textContent = "Angle:";
     pinArray = [];
     rollerArray = [];
     loadArray = [];
-    undoHistory = [];
 }
 function solveTruss(){
     return 0;
@@ -396,6 +407,7 @@ canvas.addEventListener("mousedown", (event) => {
             }
             if (check == 0){
                 copyLast();
+                typeHistory.push("P");
                 newPin = new Pin(currX, currY);
                 pinArray.push(newPin);
             }
@@ -409,6 +421,7 @@ canvas.addEventListener("mousedown", (event) => {
             }
             if (check == 0){
                 copyLast();
+                typeHistory.push("R");
                 newRoller = new Roller(currX, currY);
                 rollerArray.push(newRoller);
             }
@@ -422,7 +435,8 @@ canvas.addEventListener("mousedown", (event) => {
             }
             if (check == 0){
                 copyLast();
-                newLoad = new Load(currX, currY);
+                typeHistory.push("L");
+                newLoad = new Load(currX, currY, 1000);
                 loadArray.push(newLoad);
             }
         }
