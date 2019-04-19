@@ -71,6 +71,11 @@ function Member(startX, startY, endX, endY, length, angle) {
     this.endY = endY;
     this.length = length;
     this.angle = angle;
+    this.memberLabel = "";
+    this.jointA = "";
+    this.jointB = "";
+    this.direcNumEW;
+    this.direcNumNS;
 
     context.beginPath();
     context.moveTo(this.startX, this.startY);
@@ -100,6 +105,8 @@ function Joint(posX, posY, numMember, visible) {
 function Pin(posX, posY) {
     this.posX = posX;
     this.posY = posY;
+    this.pinLabelX = "";
+    this.pinLabelY = "";
 
     context.beginPath();
     context.moveTo(this.posX, this.posY);
@@ -111,6 +118,7 @@ function Pin(posX, posY) {
 function Roller(posX, posY) {
     this.posX = posX;
     this.posY = posY;
+    this.rollerLabel = "";
 
     context.beginPath();
     context.moveTo(this.posX, this.posY);
@@ -118,25 +126,26 @@ function Roller(posX, posY) {
     context.fillStyle = "#ff0003";
     context.fill();
 }
-function Load(posX, posY, mag){
+function Load(posX, posY, mag) {
     this.posX = posX;
     this.posY = posY;
     this.mag = mag;
+    this.loadLabel = "";
 
     context.beginPath();
     context.moveTo(this.posX, this.posY);
-    context.lineTo(this.posX, this.posY+50);
-    context.moveTo(this.posX, this.posY+49);
-    context.lineTo(this.posX-10, this.posY+39);
-    context.moveTo(this.posX, this.posY+49);
-    context.lineTo(this.posX+10, this.posY+39);
+    context.lineTo(this.posX, this.posY + 50);
+    context.moveTo(this.posX, this.posY + 49);
+    context.lineTo(this.posX - 10, this.posY + 39);
+    context.moveTo(this.posX, this.posY + 49);
+    context.lineTo(this.posX + 10, this.posY + 39);
     context.fillStyle = "black";
-    context.fillRect(this.posX-2, this.posY+47, 4, 4);
+    context.fillRect(this.posX - 2, this.posY + 47, 4, 4);
     context.strokeStyle = "black";
     context.stroke();
     context.font = "18px Cambria";
     context.fillStyle = "black";
-    context.fillText(this.mag + " kN", this.posX-30, this.posY+70);
+    context.fillText(this.mag + " kN", this.posX - 30, this.posY + 70);
 }
 
 //Temporary Creations for a Member and Joints
@@ -232,7 +241,7 @@ function restoreSnapShot() {
 }
 
 //Undo Function
-function copyLast(){
+function copyLast() {
     undoHistory.push(context.getImageData(0, 0, canvas.width, canvas.height));
 }
 
@@ -285,12 +294,12 @@ function createMember() {
         newMember = new Member(startX, startY, endX, endY, length, angle);
         memberArray.push(newMember);
         newJoint = new Joint(startX, startY, numMember, startJointVisible);
-        if (startJointVisible == true){
+        if (startJointVisible == true) {
             jointArray.push(newJoint);
             typeHistory.push("J");
         }
         newJoint = new Joint(endX, endY, numMember, endJointVisible);
-        if (endJointVisible == true){
+        if (endJointVisible == true) {
             jointArray.push(newJoint);
             typeHistory.push("J");
         }
@@ -367,8 +376,8 @@ function rollerActivate() {
         loadButtonActive = false;
     }
 }
-function loadActivate(){
-    if (lineBegin){
+function loadActivate() {
+    if (lineBegin) {
         console.log("You must first finish creating the current member!");
     } else {
         pinButtonActive = false;
@@ -377,23 +386,23 @@ function loadActivate(){
         loadButtonActive = true;
     }
 }
-function undoLast(){
-    if (undoHistory.length > 0){
-        context.putImageData(undoHistory[undoHistory.length-1],0,0);
+function undoLast() {
+    if (undoHistory.length > 0) {
+        context.putImageData(undoHistory[undoHistory.length - 1], 0, 0);
         undoHistory.pop();
-        if (typeHistory[typeHistory.length-1] == "P"){
+        if (typeHistory[typeHistory.length - 1] == "P") {
             pinArray.pop();
-        } else if (typeHistory[typeHistory.length-1] == "R"){
+        } else if (typeHistory[typeHistory.length - 1] == "R") {
             rollerArray.pop();
-        } else if (typeHistory[typeHistory.length-1] == "L"){
+        } else if (typeHistory[typeHistory.length - 1] == "L") {
             loadArray.pop();
-        } else if (typeHistory[typeHistory.length-1] == "M"){
+        } else if (typeHistory[typeHistory.length - 1] == "M") {
             memberArray.pop();
-            if (typeHistory[typeHistory.length-2] == "J"){
+            if (typeHistory[typeHistory.length - 2] == "J") {
                 jointArray.pop();
                 typeHistory.pop();
             }
-            if (typeHistory[typeHistory.length-2] == "J"){
+            if (typeHistory[typeHistory.length - 2] == "J") {
                 jointArray.pop();
                 typeHistory.pop();
             }
@@ -423,8 +432,8 @@ function removeActivate() {
     console.log(rollerArray);
     console.log(loadArray);
 }
-function solveTruss(){
-    if (memberArray.length + 2*(pinArray.length) + rollerArray.length === 2*(jointArray.length)){
+function solveTruss() {
+    if (memberArray.length + 2 * (pinArray.length) + rollerArray.length === 2 * (jointArray.length)) {
         console.log("Statically Determinate!");
     } else {
         console.log("Statically Indeterminate!");
@@ -434,37 +443,156 @@ function solveTruss(){
     if (loadArray.length == 0)
         console.log("Add a load!");
     else {
-        let A = [];
-        for (let i of jointArray.sort(function(a,b) { return a.posX-b.posX; })){
+        let A = [], b = [];
+        for (let i of jointArray.sort(function (a, b) { return a.posX - b.posX; })) {
             i.jointLabel = getAlphabet(count);
             context.font = "bold 14px Cambria";
             context.fillStyle = "white";
-            context.fillText(i.jointLabel, i.posX-5, i.posY+5);
+            context.fillText(i.jointLabel, i.posX - 5, i.posY + 5);
             A.push([]);
             A.push([]);
             count++;
         }
-        for (let i of jointArray){
-            for (let j of pinArray){
-                if (i.posX == j.posX && i.posY == j.posY){
+        for (let i of jointArray) {
+            for (let j of pinArray) {
+                if (i.posX == j.posX && i.posY == j.posY) {
                     i.hasPin = true;
                 }
             }
-            for (let j of rollerArray){
-                if (i.posX == j.posX && i.posY == j.posY){
+            for (let j of rollerArray) {
+                if (i.posX == j.posX && i.posY == j.posY) {
                     i.hasRoller = true;
                 }
             }
-            for (let j of loadArray){
-                if (i.posX == j.posX && i.posY == j.posY){
+            for (let j of loadArray) {
+                if (i.posX == j.posX && i.posY == j.posY) {
                     i.hasLoad = true;
                 }
             }
         }
-        console.log(jointArray);
+        let sJoint = "";
+        let eJoint = "";
+        let earlyS, earlyE;
+        let allForceLabels = [];
+        for (let i of memberArray.sort(function(a,b) { return (a.startX + a.endX)/2 - (b.startX + b.endX)/2; })) {
+            for (let j of jointArray) {
+                if (i.startX === j.posX && i.startY === j.posY) {
+                    sJoint = j.jointLabel;
+                    earlyS = i.startX;
+                } else if (i.endX === j.posX && i.endY === j.posY) {
+                    eJoint = j.jointLabel;
+                    earlyE = i.endX;
+                }
+            }
+            if (earlyS < earlyE)
+                i.memberLabel = sJoint + eJoint;
+            else
+                i.memberLabel = eJoint + sJoint;
+            i.jointA = i.memberLabel.charAt(0);
+            i.jointB = i.memberLabel.charAt(1);
+            allForceLabels.push(i.memberLabel);
+        }
+        for (let i = 0; i < 2*jointArray.length; i++){
+            for (let j = 0; j < 2*jointArray.length; j++)
+                A[i].push(0);
+            b.push(0);
+        }
+        for (let i of pinArray){
+            for (let j of jointArray){
+                if (i.posX === j.posX && i.posY === j.posY){
+                    i.pinLabelX = "P" + j.jointLabel + "x";
+                    i.pinLabelY = "P" + j.jointLabel + "y";
+                    allForceLabels.push(i.pinLabelX);
+                    allForceLabels.push(i.pinLabelY);
+                    break;
+                }
+            }
+        }
+        for (let i of rollerArray){
+            for (let j of jointArray){
+                if (i.posX === j.posX && i.posY === j.posY){
+                    i.rollerLabel = "R" + j.jointLabel + "y";
+                    allForceLabels.push(i.rollerLabel);
+                    break;
+                }
+            }
+        }
+        for (let i of loadArray){
+            for (let j of jointArray){
+                if (i.posX === j.posX && i.posY === j.posY){
+                    i.loadLabel = j.jointLabel;
+                    break;
+                }
+            }
+        }
+
+        let fJX, fJY, sJX, sJY;
+        for (let i of memberArray){
+            for (let j of jointArray){
+                if (i.jointA === j.jointLabel){
+                    fJX = j.posX;
+                    fJY = j.posY;
+                } else if (i.jointB === j.jointLabel){
+                    sJX = j.posX;
+                    sJY = j.posY;
+                }
+            }
+            if (fJX <= sJX) {
+                i.direcNumEW = 1;
+            } else {
+                i.direcNumEW = -1;
+            }
+            if (fJY >= sJY) {
+                i.direcNumNS = 1;
+            } else {
+                i.direcNumNS = -1;
+            }
+        }
+
+        allForceLabels = ["PAx","PAy","REy","AB","AC","BC","BD","CD","CE","DE"];
+        
+        //Main Calculation Loop
+        let cnt = 0, loadMag = 0;
+        for (let i of jointArray) {
+            if (i.hasPin === true){
+                A[cnt][allForceLabels.indexOf("PAx")] = 1;
+                A[cnt+1][allForceLabels.indexOf("PAy")] = 1;
+            }
+            if (i.hasRoller === true){
+                A[cnt+1][allForceLabels.indexOf("REy")] = 1;
+            }
+            if (i.hasLoad === true){
+                let nameLoad = "", loadCount = 0;
+                for (let j of loadArray){
+                    if (j.posX === i.posX && j.posY === i.posY){
+                        loadMag = j.mag;
+                        nameLoad = j.loadLabel;
+                    }
+                }
+                for (let j of memberArray){
+                    if (j.jointA === nameLoad){
+                        b[loadCount+1] = loadMag;
+                        break;
+                    }
+                    loadCount++;
+                }
+            }
+            for (let j of memberArray){
+                if (j.jointA === i.jointLabel){
+                    A[cnt][allForceLabels.indexOf(j.memberLabel)] = j.direcNumEW*Math.cos(j.angle/360 * 2*Math.PI);
+                    A[cnt+1][allForceLabels.indexOf(j.memberLabel)] = j.direcNumNS*Math.sin(j.angle/360 * 2*Math.PI);
+                } else if (j.jointB === i.jointLabel) {
+                    A[cnt][allForceLabels.indexOf(j.memberLabel)] = -1*j.direcNumEW*Math.cos(j.angle/360 * 2*Math.PI);
+                    A[cnt+1][allForceLabels.indexOf(j.memberLabel)] = -1*j.direcNumNS*Math.sin(j.angle/360 * 2*Math.PI);
+                }
+            }
+            cnt += 2;
+        }
+        let x = solve(A, b);
+        console.log(x);
     }
 }
-function getAlphabet(count){
+function getAlphabet(count) {
     if (count == 0)
         return "A";
     else if (count == 1)
@@ -521,6 +649,91 @@ function getAlphabet(count){
         return "*";
 }
 
+//Gaussian Elimination Code
+//---------------------------------------------------------------------------
+function print(M, msg) {
+    console.log("======" + msg + "=========")
+    for(let k=0; k<M.length; ++k) {
+      console.log(M[k]);
+    }
+    console.log("==========================")
+  }
+  
+  function diagonalize(M) {
+    let m = M.length;
+    let n = M[0].length;
+    let i_max;
+    for(let k=0; k<Math.min(m,n); ++k) {
+      i_max = findPivot(M, k);
+      if (M[i_max, k] == 0)
+        throw "matrix is singular";
+      swap_rows(M, k, i_max);
+      for(let i=k+1; i<m; ++i) {
+        let c = M[i][k] / M[k][k];
+        for(let j=k+1; j<n; ++j) {
+          M[i][j] = M[i][j] - M[k][j] * c;
+        }
+        M[i][k] = 0;
+      }
+    }
+  }
+  
+  function findPivot(M, k) {
+    let i_max = k;
+    for(let i=k+1; i<M.length; ++i) {
+      if (Math.abs(M[i][k]) > Math.abs(M[i_max][k])) {
+        i_max = i;
+      }
+    }
+    return i_max;
+  }
+  
+  function swap_rows(M, i_max, k) {
+    if (i_max != k) {
+      let temp = M[i_max];
+      M[i_max] = M[k];
+      M[k] = temp;
+    }
+  }
+  
+  function makeM(A, b) {
+    for(let i=0; i<A.length; ++i) {
+      A[i].push(b[i]);
+    }
+  }
+  
+  function substitute(M) {
+    let m = M.length;
+    for(let i=m-1; i>=0; --i) {
+      let x = M[i][m] / M[i][i];
+      for(let j=i-1; j>=0; --j) {
+        M[j][m] -= x * M[j][i];
+        M[j][i] = 0;
+      }
+      M[i][m] = x;
+      M[i][i] = 1;
+    }
+  }
+  
+  function extractX(M) {
+    let x = [];
+    let m = M.length;
+    let n = M[0].length;
+    for(let i=0; i<m; ++i){
+      x.push(M[i][n-1]);
+    }
+    return x;
+  }
+  
+  function solve(A, b) {
+    makeM(A,b);
+    diagonalize(A);
+    substitute(A);
+    let x = extractX(A);
+    return x;
+  }
+
+
 //Active Run Code
 //---------------------------------------------------------------------------
 
@@ -531,17 +744,17 @@ canvas.addEventListener("mousedown", (event) => {
         createMember();
     } else if (pinButtonActive) {
         if (inJoint()) {
-            for (let elem of rollerArray){ //Checks if there is already a roller at the current click location
-                if (elem.posX == currX && elem.posY == currY){
+            for (let elem of rollerArray) { //Checks if there is already a roller at the current click location
+                if (elem.posX == currX && elem.posY == currY) {
                     check = 1;
                 }
             }
-            for (let elem of pinArray){ //Checks if there is already a pin at the current click location
-                if (elem.posX == currX && elem.posY == currY){
+            for (let elem of pinArray) { //Checks if there is already a pin at the current click location
+                if (elem.posX == currX && elem.posY == currY) {
                     check = 1;
                 }
             }
-            if (check == 0){
+            if (check == 0) {
                 copyLast();
                 typeHistory.push("P");
                 newPin = new Pin(currX, currY);
@@ -551,17 +764,17 @@ canvas.addEventListener("mousedown", (event) => {
         }
     } else if (rollerButtonActive) {
         if (inJoint()) {
-            for (let elem of rollerArray){ //Checks if there is already a roller at the current click location
-                if (elem.posX == currX && elem.posY == currY){
+            for (let elem of rollerArray) { //Checks if there is already a roller at the current click location
+                if (elem.posX == currX && elem.posY == currY) {
                     check = 1;
                 }
             }
-            for (let elem of pinArray){ //Checks if there is already a pin at the current click location
-                if (elem.posX == currX && elem.posY == currY){
+            for (let elem of pinArray) { //Checks if there is already a pin at the current click location
+                if (elem.posX == currX && elem.posY == currY) {
                     check = 1;
                 }
             }
-            if (check == 0){
+            if (check == 0) {
                 copyLast();
                 typeHistory.push("R");
                 newRoller = new Roller(currX, currY);
@@ -571,15 +784,15 @@ canvas.addEventListener("mousedown", (event) => {
         }
     } else if (loadButtonActive) {
         if (inJoint()) {
-            for (let elem of loadArray){ //Checks if there is already a load at the current click location
-                if (elem.posX == currX && elem.posY == currY){
+            for (let elem of loadArray) { //Checks if there is already a load at the current click location
+                if (elem.posX == currX && elem.posY == currY) {
                     check = 1;
                 }
             }
-            if (check == 0){
+            if (check == 0) {
                 copyLast();
                 typeHistory.push("L");
-                newLoad = new Load(currX, currY, 1000);
+                newLoad = new Load(currX, currY, 20);
                 loadArray.push(newLoad);
                 console.log(loadArray);
             }

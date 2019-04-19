@@ -12,6 +12,7 @@ function print(M, msg) {
   function diagonalize(M) {
     var m = M.length;
     var n = M[0].length;
+    var i_max;
     for(var k=0; k<Math.min(m,n); ++k) {
       i_max = findPivot(M, k);
       if (A[i_max, k] == 0)
@@ -102,3 +103,4 @@ function print(M, msg) {
   print(b, " b ");
   
   var x = solve(A, b);
+  console.log(x);
