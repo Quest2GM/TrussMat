@@ -24,7 +24,7 @@ let endY;                  //Stores the end y-coordinate of the joint
 let mousePos;              //Gets the x and y coordinate of the user's cursor at a specific instance
 let length;                //The length of the joint that is created in metres
 let angle;                 //The acute angle to the horizontal of the joint-member in degrees
-let actualSize = 20;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
+let actualSize = 8;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
 
 //Paragraph Changer Variables
 let lengthText = document.getElementById("lengthText");     //Text updates to the screen regarding the current length of the member-joint
@@ -444,7 +444,11 @@ function solveTruss() {
         console.log("Add a load!");
     else {
         let A = [], b = [];
-        for (let i of jointArray.sort(function (a, b) { return a.posX - b.posX; })) {
+        for (let i of jointArray.sort(function (a, b) { 
+            if (a.posX === b.posX)
+                return a.posY - b.posY;
+            return a.posX - b.posX;
+        })) {
             i.jointLabel = getAlphabet(count);
             context.font = "bold 14px Cambria";
             context.fillStyle = "white";
@@ -472,20 +476,32 @@ function solveTruss() {
         }
         let sJoint = "";
         let eJoint = "";
-        let earlyS, earlyE;
+        let earlyS, earlyE, earlySY, earlyEY;
         let allForceLabels = [];
-        for (let i of memberArray.sort(function(a,b) { return (a.startX + a.endX)/2 - (b.startX + b.endX)/2; })) {
+        for (let i of memberArray.sort(function(a,b) { 
+            if ((a.startX + a.endX)/2 === (b.startX + b.endX)/2)
+                return (a.startY + a.endY)/2 - (b.startY + b.endY)/2;
+            return (a.startX + a.endX)/2 - (b.startX + b.endX)/2; 
+        })) {
             for (let j of jointArray) {
                 if (i.startX === j.posX && i.startY === j.posY) {
                     sJoint = j.jointLabel;
                     earlyS = i.startX;
+                    earlySY = i.startY;
                 } else if (i.endX === j.posX && i.endY === j.posY) {
                     eJoint = j.jointLabel;
                     earlyE = i.endX;
+                    earlyEY = i.endY;
                 }
             }
             if (earlyS < earlyE)
                 i.memberLabel = sJoint + eJoint;
+            else if (earlyS === earlyE){
+                if (earlySY < earlyEY)
+                    i.memberLabel = sJoint + eJoint;
+                else
+                    i.memberLabel = eJoint + sJoint;
+            }
             else
                 i.memberLabel = eJoint + sJoint;
             i.jointA = i.memberLabel.charAt(0);
@@ -508,11 +524,13 @@ function solveTruss() {
                 }
             }
         }
+        let rL;
         for (let i of rollerArray){
             for (let j of jointArray){
                 if (i.posX === j.posX && i.posY === j.posY){
                     i.rollerLabel = "R" + j.jointLabel + "y";
                     allForceLabels.push(i.rollerLabel);
+                    rL = j.jointLabel;
                     break;
                 }
             }
@@ -549,7 +567,8 @@ function solveTruss() {
             }
         }
 
-        allForceLabels = ["PAx","PAy","REy","AB","AC","BC","BD","CD","CE","DE"];
+        //allForceLabels = ["PAx","PAy","REy","AB","AC","BC","BD","CD","CE","DE"];
+        //allForceLabels = ["AB", "AC", "BC", "BD", "BE", "CE", ""];
         
         //Main Calculation Loop
         let cnt = 0, loadMag = 0;
@@ -559,7 +578,7 @@ function solveTruss() {
                 A[cnt+1][allForceLabels.indexOf("PAy")] = 1;
             }
             if (i.hasRoller === true){
-                A[cnt+1][allForceLabels.indexOf("REy")] = 1;
+                A[cnt+1][allForceLabels.indexOf("R"+rL+"y")] = 1;
             }
             if (i.hasLoad === true){
                 let nameLoad = "", loadCount = 0;
@@ -569,12 +588,12 @@ function solveTruss() {
                         nameLoad = j.loadLabel;
                     }
                 }
-                for (let j of memberArray){
-                    if (j.jointA === nameLoad){
+                for (let j of jointArray){
+                    if (j.jointLabel === nameLoad){
                         b[loadCount+1] = loadMag;
                         break;
                     }
-                    loadCount++;
+                    loadCount += 2;
                 }
             }
             for (let j of memberArray){
@@ -588,7 +607,11 @@ function solveTruss() {
             }
             cnt += 2;
         }
+        console.log(loadArray);
+        console.log(A);
         let x = solve(A, b);
+        console.log(allForceLabels);
+        console.log(b);
         console.log(x);
     }
 }
@@ -648,6 +671,64 @@ function getAlphabet(count) {
     else
         return "*";
 }
+
+function getNumber(count) {
+    if (count == "A")
+        return 0;
+    else if (count == "B")
+        return 1;
+    else if (count == "C")
+        return 2;
+    else if (count == "D")
+        return 3;
+    else if (count == "E")
+        return 4;
+    else if (count == "F")
+        return 5;
+    else if (count == "G")
+        return 6;
+    else if (count == "H")
+        return 7;
+    else if (count == "I")
+        return 8;
+    else if (count == "J")
+        return 9;
+    else if (count == "K")
+        return 10;
+    else if (count == "L")
+        return 11;
+    else if (count == "M")
+        return 12;
+    else if (count == "N")
+        return 13;
+    else if (count == "O")
+        return 14;
+    else if (count == "P")
+        return 15;
+    else if (count == "Q")
+        return 16;
+    else if (count == "R")
+        return 17;
+    else if (count == "S")
+        return 18;
+    else if (count == "T")
+        return 19;
+    else if (count == "U")
+        return 20;
+    else if (count == "V")
+        return 21;
+    else if (count == "W")
+        return 22;
+    else if (count == "X")
+        return 23;
+    else if (count == "Y")
+        return 24;
+    else if (count == "Z")
+        return 25;
+    else
+        return 26;
+}
+
 
 //Gaussian Elimination Code
 //---------------------------------------------------------------------------
