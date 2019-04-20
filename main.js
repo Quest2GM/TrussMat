@@ -24,7 +24,7 @@ let endY;                  //Stores the end y-coordinate of the joint
 let mousePos;              //Gets the x and y coordinate of the user's cursor at a specific instance
 let length;                //The length of the joint that is created in metres
 let angle;                 //The acute angle to the horizontal of the joint-member in degrees
-let actualSize = 8;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
+let actualSize = 22;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
 
 //Paragraph Changer Variables
 let lengthText = document.getElementById("lengthText");     //Text updates to the screen regarding the current length of the member-joint
@@ -84,11 +84,10 @@ function Member(startX, startY, endX, endY, length, angle) {
     context.strokeStyle = "#5477ea";
     context.stroke();
 }
-function Joint(posX, posY, numMember, visible) {
+function Joint(posX, posY, numMember) {
     this.posX = posX;
     this.posY = posY;
     this.numMember = numMember;
-    this.visible = visible;
     this.radius = 10;
     this.colour = "#909696";
     this.jointLabel = "";
@@ -174,21 +173,6 @@ function tempJoint(posX, posY, colour) {
     context.fillStyle = colour;
     context.fill();
 }
-function tempPin(posX, posY, colour) {
-    context.beginPath();
-    context.moveTo(posX, posY);
-    context.lineTo(posX + 20, posY + Math.sqrt(1200));
-    context.lineTo(posX - 20, posY + Math.sqrt(1200));
-    context.fillStyle = colour;
-    context.fill();
-}
-function tempRoller(posX, posY, colour) {
-    context.beginPath();
-    context.moveTo(posX, posY);
-    context.arc(posX, posY + 18, 17, 0, 7);
-    context.fillStyle = colour;
-    context.fill();
-}
 
 //Returns the coordinates of the mouse
 function getMousePos(event) {
@@ -245,6 +229,19 @@ function copyLast() {
     undoHistory.push(context.getImageData(0, 0, canvas.width, canvas.height));
 }
 
+//Checks if member has already been created at a location
+function checkCreate(X1, X2, Y1, Y2){
+    if (X1 === X2 && Y1 === Y2){
+        return false;
+    }
+    for (let i of memberArray){
+        if (i.startX === X1 && i.endX == X2 && i.startY === Y1 && i.endY === Y2) {
+            return false;
+        }
+    }
+    return true;
+}
+
 //Function to Reset for Next Iteration
 function reset() {
     numMember++;
@@ -290,62 +287,27 @@ function createMember() {
         angle = calcAngle(endY, startY, endX, startX);
 
         //Create and Store New Members and Joints
-
-        newMember = new Member(startX, startY, endX, endY, length, angle);
-        memberArray.push(newMember);
-        newJoint = new Joint(startX, startY, numMember, startJointVisible);
-        if (startJointVisible == true) {
-            jointArray.push(newJoint);
-            typeHistory.push("J");
+        if (checkCreate(startX, endX, startY, endY) === true){
+            newMember = new Member(startX, startY, endX, endY, length, angle);
+            memberArray.push(newMember);
+            newJoint = new Joint(startX, startY, numMember);
+            if (startJointVisible == true) {
+                jointArray.push(newJoint);
+                typeHistory.push("J");
+            }
+            newJoint = new Joint(endX, endY, numMember);
+            if (endJointVisible == true) {
+                jointArray.push(newJoint);
+                typeHistory.push("J");
+            }
+            typeHistory.push("M");
         }
-        newJoint = new Joint(endX, endY, numMember, endJointVisible);
-        if (endJointVisible == true) {
-            jointArray.push(newJoint);
-            typeHistory.push("J");
-        }
-        typeHistory.push("M");
-        console.log(memberArray);
-        console.log(jointArray);
         //Length and Angle Updates to the Screen
         lengthText.textContent = "Length: " + length + " m";
         angleText.textContent = "Angle: " + angle + " deg";
 
         //Reset necessary variables to default
         reset();
-    }
-}
-
-//MouseMove Functions
-function checkPins(mouseX, mouseY) {
-    for (let pins of pinArray) {
-        if (distanceBetween(mouseX, mouseY, pins.posX, pins.posY + 20 * Math.tan(Math.PI / 3) - 20 * Math.tan(Math.PI / 6)) < 20 * Math.tan(Math.PI / 6)) {
-            tempPin(pins.posX, pins.posY, "#e0233c");
-            break;
-        } else {
-            tempPin(pins.posX, pins.posY, "#ff0003");
-            tempJoint(pins.posX, pins.posY, "#909696");
-        }
-    }
-}
-function checkRollers(mouseX, mouseY) {
-    for (let rollers of rollerArray) {
-        if (distanceBetween(mouseX, mouseY, rollers.posX, rollers.posY + 18) < 17) {
-            tempRoller(rollers.posX, rollers.posY, "#e0233c");
-            break;
-        } else {
-            tempRoller(rollers.posX, rollers.posY, "#ff0003");
-            tempJoint(rollers.posX, rollers.posY, "#909696");
-        }
-    }
-}
-function checkJoints(mouseX, mouseY) {
-    for (let joints of jointArray) {
-        if (distanceBetween(mouseX, mouseY, joints.posX, joints.posY) < joints.radius) {
-            tempJoint(joints.posX, joints.posY, "#737a79");
-            break;
-        } else {
-            tempJoint(joints.posX, joints.posY, "#909696");
-        }
     }
 }
 
@@ -409,12 +371,6 @@ function undoLast() {
         }
         typeHistory.pop();
     }
-    console.log(typeHistory);
-    console.log(memberArray);
-    console.log(jointArray);
-    console.log(pinArray);
-    console.log(rollerArray);
-    console.log(loadArray);
 }
 function removeActivate() {
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -425,12 +381,6 @@ function removeActivate() {
     pinArray = [];
     rollerArray = [];
     loadArray = [];
-    console.log(typeHistory);
-    console.log(memberArray);
-    console.log(jointArray);
-    console.log(pinArray);
-    console.log(rollerArray);
-    console.log(loadArray);
 }
 function solveTruss() {
     if (memberArray.length + 2 * (pinArray.length) + rollerArray.length === 2 * (jointArray.length)) {
@@ -444,6 +394,13 @@ function solveTruss() {
         console.log("Add a load!");
     else {
         let A = [], b = [];
+        let sJoint = "";
+        let eJoint = "";
+        let earlyS, earlyE, earlySY, earlyEY;
+        let allForceLabels = [];
+        let rL;
+        let fJX, fJY, sJX, sJY;
+
         for (let i of jointArray.sort(function (a, b) { 
             if (a.posX === b.posX)
                 return a.posY - b.posY;
@@ -474,10 +431,7 @@ function solveTruss() {
                 }
             }
         }
-        let sJoint = "";
-        let eJoint = "";
-        let earlyS, earlyE, earlySY, earlyEY;
-        let allForceLabels = [];
+        
         for (let i of memberArray.sort(function(a,b) { 
             if ((a.startX + a.endX)/2 === (b.startX + b.endX)/2)
                 return (a.startY + a.endY)/2 - (b.startY + b.endY)/2;
@@ -524,7 +478,6 @@ function solveTruss() {
                 }
             }
         }
-        let rL;
         for (let i of rollerArray){
             for (let j of jointArray){
                 if (i.posX === j.posX && i.posY === j.posY){
@@ -544,7 +497,6 @@ function solveTruss() {
             }
         }
 
-        let fJX, fJY, sJX, sJY;
         for (let i of memberArray){
             for (let j of jointArray){
                 if (i.jointA === j.jointLabel){
@@ -566,9 +518,6 @@ function solveTruss() {
                 i.direcNumNS = -1;
             }
         }
-
-        //allForceLabels = ["PAx","PAy","REy","AB","AC","BC","BD","CD","CE","DE"];
-        //allForceLabels = ["AB", "AC", "BC", "BD", "BE", "CE", ""];
         
         //Main Calculation Loop
         let cnt = 0, loadMag = 0;
@@ -607,12 +556,8 @@ function solveTruss() {
             }
             cnt += 2;
         }
-        console.log(loadArray);
-        console.log(A);
-        let x = solve(A, b);
+        console.log(solve(A,b));
         console.log(allForceLabels);
-        console.log(b);
-        console.log(x);
     }
 }
 function getAlphabet(count) {
@@ -672,147 +617,82 @@ function getAlphabet(count) {
         return "*";
 }
 
-function getNumber(count) {
-    if (count == "A")
-        return 0;
-    else if (count == "B")
-        return 1;
-    else if (count == "C")
-        return 2;
-    else if (count == "D")
-        return 3;
-    else if (count == "E")
-        return 4;
-    else if (count == "F")
-        return 5;
-    else if (count == "G")
-        return 6;
-    else if (count == "H")
-        return 7;
-    else if (count == "I")
-        return 8;
-    else if (count == "J")
-        return 9;
-    else if (count == "K")
-        return 10;
-    else if (count == "L")
-        return 11;
-    else if (count == "M")
-        return 12;
-    else if (count == "N")
-        return 13;
-    else if (count == "O")
-        return 14;
-    else if (count == "P")
-        return 15;
-    else if (count == "Q")
-        return 16;
-    else if (count == "R")
-        return 17;
-    else if (count == "S")
-        return 18;
-    else if (count == "T")
-        return 19;
-    else if (count == "U")
-        return 20;
-    else if (count == "V")
-        return 21;
-    else if (count == "W")
-        return 22;
-    else if (count == "X")
-        return 23;
-    else if (count == "Y")
-        return 24;
-    else if (count == "Z")
-        return 25;
-    else
-        return 26;
-}
-
-
 //Gaussian Elimination Code
 //---------------------------------------------------------------------------
-function print(M, msg) {
-    console.log("======" + msg + "=========")
-    for(let k=0; k<M.length; ++k) {
-      console.log(M[k]);
-    }
-    console.log("==========================")
-  }
-  
-  function diagonalize(M) {
+
+function diagonalize(M) {
     let m = M.length;
     let n = M[0].length;
     let i_max;
-    for(let k=0; k<Math.min(m,n); ++k) {
-      i_max = findPivot(M, k);
-      if (M[i_max, k] == 0)
-        throw "matrix is singular";
-      swap_rows(M, k, i_max);
-      for(let i=k+1; i<m; ++i) {
-        let c = M[i][k] / M[k][k];
-        for(let j=k+1; j<n; ++j) {
-          M[i][j] = M[i][j] - M[k][j] * c;
+    for (let k = 0; k < Math.min(m, n); ++k) {
+        i_max = findPivot(M, k);
+        if (M[i_max, k] == 0)
+            throw "matrix is singular";
+        swap_rows(M, k, i_max);
+        for (let i = k + 1; i < m; ++i) {
+            let c = M[i][k] / M[k][k];
+            for (let j = k + 1; j < n; ++j) {
+                M[i][j] = M[i][j] - M[k][j] * c;
+            }
+            M[i][k] = 0;
         }
-        M[i][k] = 0;
-      }
     }
-  }
-  
-  function findPivot(M, k) {
+}
+
+function findPivot(M, k) {
     let i_max = k;
-    for(let i=k+1; i<M.length; ++i) {
-      if (Math.abs(M[i][k]) > Math.abs(M[i_max][k])) {
-        i_max = i;
-      }
+    for (let i = k + 1; i < M.length; ++i) {
+        if (Math.abs(M[i][k]) > Math.abs(M[i_max][k])) {
+            i_max = i;
+        }
     }
     return i_max;
-  }
-  
-  function swap_rows(M, i_max, k) {
+}
+
+function swap_rows(M, i_max, k) {
     if (i_max != k) {
-      let temp = M[i_max];
-      M[i_max] = M[k];
-      M[k] = temp;
+        let temp = M[i_max];
+        M[i_max] = M[k];
+        M[k] = temp;
     }
-  }
-  
-  function makeM(A, b) {
-    for(let i=0; i<A.length; ++i) {
-      A[i].push(b[i]);
+}
+
+function makeM(A, b) {
+    for (let i = 0; i < A.length; ++i) {
+        A[i].push(b[i]);
     }
-  }
-  
-  function substitute(M) {
+}
+
+function substitute(M) {
     let m = M.length;
-    for(let i=m-1; i>=0; --i) {
-      let x = M[i][m] / M[i][i];
-      for(let j=i-1; j>=0; --j) {
-        M[j][m] -= x * M[j][i];
-        M[j][i] = 0;
-      }
-      M[i][m] = x;
-      M[i][i] = 1;
+    for (let i = m - 1; i >= 0; --i) {
+        let x = M[i][m] / M[i][i];
+        for (let j = i - 1; j >= 0; --j) {
+            M[j][m] -= x * M[j][i];
+            M[j][i] = 0;
+        }
+        M[i][m] = x;
+        M[i][i] = 1;
     }
-  }
-  
-  function extractX(M) {
+}
+
+function extractX(M) {
     let x = [];
     let m = M.length;
     let n = M[0].length;
-    for(let i=0; i<m; ++i){
-      x.push(M[i][n-1]);
+    for (let i = 0; i < m; ++i) {
+        x.push(M[i][n - 1]);
     }
     return x;
-  }
-  
-  function solve(A, b) {
-    makeM(A,b);
+}
+
+function solve(A, b) {
+    makeM(A, b);
     diagonalize(A);
     substitute(A);
     let x = extractX(A);
     return x;
-  }
+}
 
 
 //Active Run Code
@@ -840,7 +720,6 @@ canvas.addEventListener("mousedown", (event) => {
                 typeHistory.push("P");
                 newPin = new Pin(currX, currY);
                 pinArray.push(newPin);
-                console.log(pinArray);
             }
         }
     } else if (rollerButtonActive) {
@@ -860,7 +739,6 @@ canvas.addEventListener("mousedown", (event) => {
                 typeHistory.push("R");
                 newRoller = new Roller(currX, currY);
                 rollerArray.push(newRoller);
-                console.log(rollerArray);
             }
         }
     } else if (loadButtonActive) {
@@ -873,9 +751,8 @@ canvas.addEventListener("mousedown", (event) => {
             if (check == 0) {
                 copyLast();
                 typeHistory.push("L");
-                newLoad = new Load(currX, currY, 20);
+                newLoad = new Load(currX, currY, 10);
                 loadArray.push(newLoad);
-                console.log(loadArray);
             }
         }
     }
@@ -892,7 +769,4 @@ canvas.addEventListener("mousemove", (event) => {
     }
     posXText.textContent = "X: " + mousePos.x;
     posYText.textContent = "Y: " + mousePos.y;
-    //checkPins(mousePos.x, mousePos.y);
-    //checkRollers(mousePos.x, mousePos.y);
-    //checkJoints(mousePos.x, mousePos.y);
 });
