@@ -25,14 +25,29 @@
     <canvas id="newCanvas" width="800" height="500"></canvas>
     <br>
 
-    <button style="height:25px; width:112px", onclick = "memberPinActivate()"> ⏹️ Member </button>
-    <button style="height:25px; width:112px", onclick = "pinActivate()"> 🔺 Pin </button>
-    <button style="height:25px; width:112px", onclick = "rollerActivate()"> 🔴 Roller </button>
-    <button style="height:25px; width:112px", onclick = "loadActivate()"> ⬇️ Load </button>
-    <button style="height:25px; width:112px", onclick = "undoLast()"> ↩️ Undo </button>
-    <button style="height:25px; width:112px", onclick = "removeActivate()"> ❌ Clear All </button>
-    <button style="height:25px; width:112px", onclick = "solveTruss()"> ▶️ Solve Truss </button>
+    <button style="height:25px; width:110px", onclick = "memberPinActivate()"> ⏹️ Member </button>
+    <button style="height:25px; width:110px", onclick = "pinActivate()"> 🔺 Pin </button>
+    <button style="height:25px; width:110px", onclick = "rollerActivate()"> 🔴 Roller </button>
+    <button style="height:25px; width:110px", onclick = "loadActivate()"> ⬇️ Load </button>
+    <button style="height:25px; width:110px", onclick = "undoLast()"> ↩️ Undo </button>
+    <button style="height:25px; width:110px", onclick = "removeActivate()"> ❌ Clear All </button>
+    <button style="height:25px; width:110px", onclick = "solveTruss()"> ▶️ Solve Truss </button>
 
+    <br>
+    <br>
+    <hr>
+    <br>
+
+    <label> <strong> Load (kN): </strong> </label>
+    <input id="loadText" type="text">
+
+    <br>
+    <br>
+    <hr>
+    <br>
+
+    <div id = "loadTable"></div>
+    
     <script src="main.js"></script>
 </body>
 

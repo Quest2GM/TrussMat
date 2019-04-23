@@ -24,13 +24,15 @@ let endY;                  //Stores the end y-coordinate of the joint
 let mousePos;              //Gets the x and y coordinate of the user's cursor at a specific instance
 let length;                //The length of the joint that is created in metres
 let angle;                 //The acute angle to the horizontal of the joint-member in degrees
-let actualSize = 22;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
+let actualSize = 12;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
 
 //Paragraph Changer Variables
 let lengthText = document.getElementById("lengthText");     //Text updates to the screen regarding the current length of the member-joint
 let angleText = document.getElementById("angleText");       //Text updater to the screen regarding the curring angle of the member-joint
 let posXText = document.getElementById("posX");
 let posYText = document.getElementById("posY");
+let loadText = document.getElementById("loadText");
+let loadTable = document.getElementById("loadTable");
 
 //Member Property Variables
 let newMember;           //When a new member is created with its respective constructor, it is stored in this variable
@@ -230,11 +232,11 @@ function copyLast() {
 }
 
 //Checks if member has already been created at a location
-function checkCreate(X1, X2, Y1, Y2){
-    if (X1 === X2 && Y1 === Y2){
+function checkCreate(X1, X2, Y1, Y2) {
+    if (X1 === X2 && Y1 === Y2) {
         return false;
     }
-    for (let i of memberArray){
+    for (let i of memberArray) {
         if (i.startX === X1 && i.endX == X2 && i.startY === Y1 && i.endY === Y2) {
             return false;
         }
@@ -287,7 +289,7 @@ function createMember() {
         angle = calcAngle(endY, startY, endX, startX);
 
         //Create and Store New Members and Joints
-        if (checkCreate(startX, endX, startY, endY) === true){
+        if (checkCreate(startX, endX, startY, endY) === true) {
             newMember = new Member(startX, startY, endX, endY, length, angle);
             memberArray.push(newMember);
             newJoint = new Joint(startX, startY, numMember);
@@ -389,6 +391,7 @@ function solveTruss() {
         console.log("Statically Indeterminate!");
         return;
     }
+
     let count = 0;
     if (loadArray.length == 0)
         console.log("Add a load!");
@@ -398,10 +401,13 @@ function solveTruss() {
         let eJoint = "";
         let earlyS, earlyE, earlySY, earlyEY;
         let allForceLabels = [];
-        let rL;
+        let rL, pL;
         let fJX, fJY, sJX, sJY;
 
-        for (let i of jointArray.sort(function (a, b) { 
+        copyLast();
+        typeHistory.push("S");
+
+        for (let i of jointArray.sort(function (a, b) {
             if (a.posX === b.posX)
                 return a.posY - b.posY;
             return a.posX - b.posX;
@@ -431,11 +437,11 @@ function solveTruss() {
                 }
             }
         }
-        
-        for (let i of memberArray.sort(function(a,b) { 
-            if ((a.startX + a.endX)/2 === (b.startX + b.endX)/2)
-                return (a.startY + a.endY)/2 - (b.startY + b.endY)/2;
-            return (a.startX + a.endX)/2 - (b.startX + b.endX)/2; 
+
+        for (let i of memberArray.sort(function (a, b) {
+            if ((a.startX + a.endX) / 2 === (b.startX + b.endX) / 2)
+                return (a.startY + a.endY) / 2 - (b.startY + b.endY) / 2;
+            return (a.startX + a.endX) / 2 - (b.startX + b.endX) / 2;
         })) {
             for (let j of jointArray) {
                 if (i.startX === j.posX && i.startY === j.posY) {
@@ -450,7 +456,7 @@ function solveTruss() {
             }
             if (earlyS < earlyE)
                 i.memberLabel = sJoint + eJoint;
-            else if (earlyS === earlyE){
+            else if (earlyS === earlyE) {
                 if (earlySY < earlyEY)
                     i.memberLabel = sJoint + eJoint;
                 else
@@ -462,25 +468,26 @@ function solveTruss() {
             i.jointB = i.memberLabel.charAt(1);
             allForceLabels.push(i.memberLabel);
         }
-        for (let i = 0; i < 2*jointArray.length; i++){
-            for (let j = 0; j < 2*jointArray.length; j++)
+        for (let i = 0; i < 2 * jointArray.length; i++) {
+            for (let j = 0; j < 2 * jointArray.length; j++)
                 A[i].push(0);
             b.push(0);
         }
-        for (let i of pinArray){
-            for (let j of jointArray){
-                if (i.posX === j.posX && i.posY === j.posY){
+        for (let i of pinArray) {
+            for (let j of jointArray) {
+                if (i.posX === j.posX && i.posY === j.posY) {
                     i.pinLabelX = "P" + j.jointLabel + "x";
                     i.pinLabelY = "P" + j.jointLabel + "y";
                     allForceLabels.push(i.pinLabelX);
                     allForceLabels.push(i.pinLabelY);
+                    pL = j.jointLabel;
                     break;
                 }
             }
         }
-        for (let i of rollerArray){
-            for (let j of jointArray){
-                if (i.posX === j.posX && i.posY === j.posY){
+        for (let i of rollerArray) {
+            for (let j of jointArray) {
+                if (i.posX === j.posX && i.posY === j.posY) {
                     i.rollerLabel = "R" + j.jointLabel + "y";
                     allForceLabels.push(i.rollerLabel);
                     rL = j.jointLabel;
@@ -488,21 +495,21 @@ function solveTruss() {
                 }
             }
         }
-        for (let i of loadArray){
-            for (let j of jointArray){
-                if (i.posX === j.posX && i.posY === j.posY){
+        for (let i of loadArray) {
+            for (let j of jointArray) {
+                if (i.posX === j.posX && i.posY === j.posY) {
                     i.loadLabel = j.jointLabel;
                     break;
                 }
             }
         }
 
-        for (let i of memberArray){
-            for (let j of jointArray){
-                if (i.jointA === j.jointLabel){
+        for (let i of memberArray) {
+            for (let j of jointArray) {
+                if (i.jointA === j.jointLabel) {
                     fJX = j.posX;
                     fJY = j.posY;
-                } else if (i.jointB === j.jointLabel){
+                } else if (i.jointB === j.jointLabel) {
                     sJX = j.posX;
                     sJY = j.posY;
                 }
@@ -518,100 +525,130 @@ function solveTruss() {
                 i.direcNumNS = -1;
             }
         }
-        
+
         //Main Calculation Loop
         let cnt = 0, loadMag = 0;
         for (let i of jointArray) {
-            if (i.hasPin === true){
-                A[cnt][allForceLabels.indexOf("PAx")] = 1;
-                A[cnt+1][allForceLabels.indexOf("PAy")] = 1;
+            if (i.hasPin === true) {
+                A[cnt][allForceLabels.indexOf("P" + pL + "x")] = 1;
+                A[cnt + 1][allForceLabels.indexOf("P" + pL + "y")] = 1;
             }
-            if (i.hasRoller === true){
-                A[cnt+1][allForceLabels.indexOf("R"+rL+"y")] = 1;
+            if (i.hasRoller === true) {
+                A[cnt + 1][allForceLabels.indexOf("R" + rL + "y")] = 1;
             }
-            if (i.hasLoad === true){
+            if (i.hasLoad === true) {
                 let nameLoad = "", loadCount = 0;
-                for (let j of loadArray){
-                    if (j.posX === i.posX && j.posY === i.posY){
+                for (let j of loadArray) {
+                    if (j.posX === i.posX && j.posY === i.posY) {
                         loadMag = j.mag;
                         nameLoad = j.loadLabel;
                     }
                 }
-                for (let j of jointArray){
-                    if (j.jointLabel === nameLoad){
-                        b[loadCount+1] = loadMag;
+                for (let j of jointArray) {
+                    if (j.jointLabel === nameLoad) {
+                        b[loadCount + 1] = loadMag;
                         break;
                     }
                     loadCount += 2;
                 }
             }
-            for (let j of memberArray){
-                if (j.jointA === i.jointLabel){
-                    A[cnt][allForceLabels.indexOf(j.memberLabel)] = j.direcNumEW*Math.cos(j.angle/360 * 2*Math.PI);
-                    A[cnt+1][allForceLabels.indexOf(j.memberLabel)] = j.direcNumNS*Math.sin(j.angle/360 * 2*Math.PI);
+            for (let j of memberArray) {
+                if (j.jointA === i.jointLabel) {
+                    A[cnt][allForceLabels.indexOf(j.memberLabel)] = j.direcNumEW * Math.cos(j.angle / 360 * 2 * Math.PI);
+                    A[cnt + 1][allForceLabels.indexOf(j.memberLabel)] = j.direcNumNS * Math.sin(j.angle / 360 * 2 * Math.PI);
                 } else if (j.jointB === i.jointLabel) {
-                    A[cnt][allForceLabels.indexOf(j.memberLabel)] = -1*j.direcNumEW*Math.cos(j.angle/360 * 2*Math.PI);
-                    A[cnt+1][allForceLabels.indexOf(j.memberLabel)] = -1*j.direcNumNS*Math.sin(j.angle/360 * 2*Math.PI);
+                    A[cnt][allForceLabels.indexOf(j.memberLabel)] = -1 * j.direcNumEW * Math.cos(j.angle / 360 * 2 * Math.PI);
+                    A[cnt + 1][allForceLabels.indexOf(j.memberLabel)] = -1 * j.direcNumNS * Math.sin(j.angle / 360 * 2 * Math.PI);
                 }
             }
             cnt += 2;
         }
-        console.log(solve(A,b));
+
+        let x = solve(A, b);
+
+        console.log(x);
         console.log(allForceLabels);
+
+        let table = document.createElement("table");
+        let fields = ["Member", "Load (kN)"];
+        let headRow = document.createElement("tr");
+        fields.forEach(function (field) {
+            let headCell = document.createElement("th");
+            headCell.textContent = field;
+            headRow.appendChild(headCell);
+        });
+        table.appendChild(headRow);
+
+        let c = 0;
+        for (let i of allForceLabels) {
+            let row = document.createElement("tr");
+            let cell1 = document.createElement("td");
+            let cell2 = document.createElement("td");
+            cell1.textContent = i;
+            cell1.style.textAlign = "center";
+            cell2.textContent = Math.round(x[c]*1000)/1000;
+            cell2.style.textAlign = "center";
+            row.appendChild(cell1);
+            row.appendChild(cell2);
+            table.appendChild(row);
+            c++;
+        }
+        loadTable.appendChild(table);
     }
 }
+
 function getAlphabet(count) {
-    if (count == 0)
+    if (count === 0)
         return "A";
-    else if (count == 1)
+    else if (count === 1)
         return "B";
-    else if (count == 2)
+    else if (count === 2)
         return "C";
-    else if (count == 3)
+    else if (count === 3)
         return "D";
-    else if (count == 4)
+    else if (count === 4)
         return "E";
-    else if (count == 5)
+    else if (count === 5)
         return "F";
-    else if (count == 6)
+    else if (count === 6)
         return "G";
-    else if (count == 7)
+    else if (count === 7)
         return "H";
-    else if (count == 8)
+    else if (count === 8)
         return "I";
-    else if (count == 9)
+    else if (count === 9)
         return "J";
-    else if (count == 10)
+    else if (count === 10)
         return "K";
-    else if (count == 11)
+    else if (count === 11)
         return "L";
-    else if (count == 12)
+    else if (count === 12)
         return "M";
-    else if (count == 13)
+    else if (count === 13)
         return "N";
-    else if (count == 14)
+    else if (count === 14)
         return "O";
-    else if (count == 15)
+    else if (count === 15)
         return "P";
-    else if (count == 16)
+    else if (count === 16)
         return "Q";
-    else if (count == 17)
+    else if (count === 17)
         return "R";
-    else if (count == 18)
+    else if (count === 18)
         return "S";
-    else if (count == 19)
+    else if (count === 19)
         return "T";
-    else if (count == 20)
+    else if (count === 20)
         return "U";
-    else if (count == 21)
+    else if (count === 21)
         return "V";
-    else if (count == 22)
+    else if (count === 22)
         return "W";
-    else if (count == 23)
+    else if (count === 23)
         return "X";
-    else if (count == 24)
+    else if (count === 24)
         return "Y";
-    else if (count == 25)
+    else if (count === 25)
         return "Z";
     else
         return "*";
@@ -749,10 +786,12 @@ canvas.addEventListener("mousedown", (event) => {
                 }
             }
             if (check == 0) {
-                copyLast();
-                typeHistory.push("L");
-                newLoad = new Load(currX, currY, 10);
-                loadArray.push(newLoad);
+                if (loadText.value != "" && !isNaN(parseInt(loadText.value))) {
+                    copyLast();
+                    typeHistory.push("L");
+                    newLoad = new Load(currX, currY, parseInt(loadText.value));
+                    loadArray.push(newLoad);
+                }
             }
         }
     }
