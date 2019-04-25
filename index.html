@@ -9,11 +9,7 @@
 </head>
 
 <head>
-    <style type="text/css">
-        canvas {
-            border: 1px solid black;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -22,16 +18,16 @@
     <p id="angleText"> Angle: </p>
     <p id="posX"> X: </p>
     <p id="posY"> Y: </p>
-    <canvas id="newCanvas" width="800" height="500"></canvas>
+    <canvas id="newCanvas" width="1200" height="600"></canvas>
     <br>
 
-    <button style="height:25px; width:110px", onclick = "memberPinActivate()"> ⏹️ Member </button>
-    <button style="height:25px; width:110px", onclick = "pinActivate()"> 🔺 Pin </button>
-    <button style="height:25px; width:110px", onclick = "rollerActivate()"> 🔴 Roller </button>
-    <button style="height:25px; width:110px", onclick = "loadActivate()"> ⬇️ Load </button>
-    <button style="height:25px; width:110px", onclick = "undoLast()"> ↩️ Undo </button>
-    <button style="height:25px; width:110px", onclick = "removeActivate()"> ❌ Clear All </button>
-    <button style="height:25px; width:110px", onclick = "solveTruss()"> ▶️ Solve Truss </button>
+    <button class="canvButtons" , style="height:40px; width:150px" , onclick="memberPinActivate()"> ⏹️ Member </button>
+    <button class="canvButtons" , style="height:40px; width:150px" , onclick="pinActivate()"> 🔺 Pin </button>
+    <button class="canvButtons" , style="height:40px; width:150px" , onclick="rollerActivate()"> 🔴 Roller </button>
+    <button class="canvButtons" , style="height:40px; width:150px" , onclick="loadActivate()"> ⬇️ Load </button>
+    <button class="canvButtons" , style="height:40px; width:150px" , onclick="undoLast()"> ↩️ Undo </button>
+    <button class="canvButtons" , style="height:40px; width:150px" , onclick="removeActivate()"> ❌ Clear All </button>
+    <button class="canvButtons" , style="height:40px; width:150px" , onclick="solveTruss()"> ▶️ Solve Truss </button>
 
     <br>
     <br>
@@ -46,8 +42,9 @@
     <hr>
     <br>
 
-    <div id = "loadTable"></div>
-    
+    <div id="loadDiv"></div>
+    <table id="loadTable"> </table>
+
     <script src="main.js"></script>
 </body>
 

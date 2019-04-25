@@ -1,0 +1,22 @@
+canvas {
+    background-color: #fff;
+    border: 1.5px solid #000;
+}
+
+body h1 {
+    background-color: #d12929;
+    color: #fff;
+    padding: 15px 500px
+}
+
+body {
+    background-color: #f4f4f4;
+    font-family: Tahoma, Geneva, sans-serif;
+}
+
+.canvButtons {
+    background-color: #4c0920;
+    color: #fff;
+    border: 2px #000;
+    font-family: Tahoma, Geneva, sans-serif;
+}

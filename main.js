@@ -32,6 +32,7 @@ let angleText = document.getElementById("angleText");       //Text updater to th
 let posXText = document.getElementById("posX");
 let posYText = document.getElementById("posY");
 let loadText = document.getElementById("loadText");
+let loadDiv = document.getElementById("loadDiv");
 let loadTable = document.getElementById("loadTable");
 
 //Member Property Variables
@@ -387,6 +388,7 @@ function removeActivate() {
 function solveTruss() {
     if (memberArray.length + 2 * (pinArray.length) + rollerArray.length === 2 * (jointArray.length)) {
         console.log("Statically Determinate!");
+        deleteTable();
     } else {
         console.log("Statically Indeterminate!");
         return;
@@ -569,7 +571,6 @@ function solveTruss() {
         console.log(x);
         console.log(allForceLabels);
 
-        let table = document.createElement("table");
         let fields = ["Member", "Load (kN)"];
         let headRow = document.createElement("tr");
         fields.forEach(function (field) {
@@ -577,7 +578,7 @@ function solveTruss() {
             headCell.textContent = field;
             headRow.appendChild(headCell);
         });
-        table.appendChild(headRow);
+        loadTable.appendChild(headRow);
 
         let c = 0;
         for (let i of allForceLabels) {
@@ -586,14 +587,20 @@ function solveTruss() {
             let cell2 = document.createElement("td");
             cell1.textContent = i;
             cell1.style.textAlign = "center";
-            cell2.textContent = Math.round(x[c]*1000)/1000;
+            cell2.textContent = Math.round(x[c] * 1000) / 1000;
             cell2.style.textAlign = "center";
             row.appendChild(cell1);
             row.appendChild(cell2);
-            table.appendChild(row);
+            loadTable.appendChild(row);
             c++;
         }
-        loadTable.appendChild(table);
+        loadDiv.appendChild(loadTable);
+    }
+}
+
+function deleteTable() { // Deletes the rows of the existing table
+    while (loadTable.hasChildNodes()) {
+        loadTable.removeChild(loadTable.firstChild);
     }
 }
 
