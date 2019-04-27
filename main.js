@@ -14,6 +14,7 @@ let memberJointButtonActive = false;  //True if the user has clicked the member 
 let pinButtonActive = false;          //True if the user has clicked the pin button
 let rollerButtonActive = false;       //True if the user has clicked the roller button
 let loadButtonActive = false;       //True if the user has clicked the remove button
+let solveTrussActive = false;
 
 //Line Property Variables
 let lineBegin = false;     //This indicates whether the user has begun creating the member-joint line or not
@@ -22,9 +23,9 @@ let startY;                //Stores the start y-coordinate of the joint
 let endX;                  //Stores the end x-coordinate of the joint
 let endY;                  //Stores the end y-coordinate of the joint
 let mousePos;              //Gets the x and y coordinate of the user's cursor at a specific instance
-let length;                //The length of the joint that is created in metres
+let len;                    //The length of the joint that is created in metres
 let angle;                 //The acute angle to the horizontal of the joint-member in degrees
-let actualSize = 12;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
+let actualSize = 52;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
 
 //Paragraph Changer Variables
 let lengthText = document.getElementById("lengthText");     //Text updates to the screen regarding the current length of the member-joint
@@ -34,10 +35,13 @@ let posYText = document.getElementById("posY");
 let loadText = document.getElementById("loadText");
 let loadDiv = document.getElementById("loadDiv");
 let loadTable = document.getElementById("loadTable");
+let virtualText = document.getElementById("virtualText");
+let yieldText = document.getElementById("yieldText");
 
 //Member Property Variables
 let newMember;           //When a new member is created with its respective constructor, it is stored in this variable
 let memberArray = [];    //The newMember variable is immediately stored in this array
+let memberArraySort = [];
 let currStartX;          //When the user clicks in the joint to begin a new member, stores the x-coordinate
 let currStartY;          //When the user clicks in the joint to begin a new member, stores the y-coordinate
 let currEndX;            //When the user clicks in the joint to end a new member, stores the x-coordinate
@@ -46,6 +50,7 @@ let currEndY;            //When the user clicks in the joint to end a new member
 //Joint Property Variables
 let newJoint;                           //When a new joint is created with its repective constructor, it is stored in this variable
 let jointArray = [];                    //The newJoint variable is immediately stored in this array
+let jointArraySort = [];
 let numMember = 0;                      //Indicates which member it is attached to
 let clickedStartMouseInJoint = false;   //When beginning the member, indicates whether the start position is already within a joint
 let clickedEndMouseInJoint = false;     //When beginning the member, indicates whether the end position is already within a joint
@@ -67,18 +72,19 @@ let undoHistory = [];   //For the undo button functionality.
 let typeHistory = [];   //To track what was added to the canvas
 
 //Constructor Function to build new members, joints, pins loads and rollers
-function Member(startX, startY, endX, endY, length, angle) {
+function Member(startX, startY, endX, endY, len, angle) {
     this.startX = startX;
     this.startY = startY;
     this.endX = endX;
     this.endY = endY;
-    this.length = length;
+    this.len = len;
     this.angle = angle;
     this.memberLabel = "";
     this.jointA = "";
     this.jointB = "";
     this.direcNumEW;
     this.direcNumNS;
+    this.HSS;
 
     context.beginPath();
     context.moveTo(this.startX, this.startY);
@@ -155,14 +161,14 @@ function tempMember(posX, posY) {
     context.beginPath();
     if (clickedStartMouseInJoint) {
         context.moveTo(currStartX, currStartY);
-        length = calcLength(posY, currStartY, posX, currStartX);
+        len = calcLength(posY, currStartY, posX, currStartX);
         angle = calcAngle(posY, currStartY, posX, currStartX);
     } else {
         context.moveTo(startX, startY);
-        length = calcLength(posY, startY, posX, startX);
+        len = calcLength(posY, startY, posX, startX);
         angle = calcAngle(posY, startY, posX, startX);
     }
-    lengthText.textContent = "Length: " + length + " m";
+    lengthText.textContent = "Length: " + len + " m";
     angleText.textContent = "Angle: " + angle + " deg";
     context.lineTo(posX, posY);
     context.lineWidth = 5;
@@ -286,12 +292,12 @@ function createMember() {
         }
 
         //Calculate Lengths and Angles
-        length = calcLength(endY, startY, endX, startX);
+        len = calcLength(endY, startY, endX, startX);
         angle = calcAngle(endY, startY, endX, startX);
 
         //Create and Store New Members and Joints
         if (checkCreate(startX, endX, startY, endY) === true) {
-            newMember = new Member(startX, startY, endX, endY, length, angle);
+            newMember = new Member(startX, startY, endX, endY, len, angle);
             memberArray.push(newMember);
             newJoint = new Joint(startX, startY, numMember);
             if (startJointVisible == true) {
@@ -306,7 +312,7 @@ function createMember() {
             typeHistory.push("M");
         }
         //Length and Angle Updates to the Screen
-        lengthText.textContent = "Length: " + length + " m";
+        lengthText.textContent = "Length: " + len + " m";
         angleText.textContent = "Angle: " + angle + " deg";
 
         //Reset necessary variables to default
@@ -371,6 +377,9 @@ function undoLast() {
                 jointArray.pop();
                 typeHistory.pop();
             }
+        } else if (typeHistory[typeHistory.length - 1] == "S") {
+            solveTrussActive = false;
+            deleteTable();
         }
         typeHistory.pop();
     }
@@ -384,11 +393,12 @@ function removeActivate() {
     pinArray = [];
     rollerArray = [];
     loadArray = [];
+    deleteTable();
+    solveTrussActive = false;
 }
 function solveTruss() {
     if (memberArray.length + 2 * (pinArray.length) + rollerArray.length === 2 * (jointArray.length)) {
         console.log("Statically Determinate!");
-        deleteTable();
     } else {
         console.log("Statically Indeterminate!");
         return;
@@ -397,211 +407,266 @@ function solveTruss() {
     let count = 0;
     if (loadArray.length == 0)
         console.log("Add a load!");
-    else {
-        let A = [], b = [];
-        let sJoint = "";
-        let eJoint = "";
-        let earlyS, earlyE, earlySY, earlyEY;
-        let allForceLabels = [];
-        let rL, pL;
-        let fJX, fJY, sJX, sJY;
 
+    let A = [], b = [], AV = [], bV = [];
+    let sJoint = "";
+    let eJoint = "";
+    let earlyS, earlyE, earlySY, earlyEY;
+    let allForceLabels = [];
+    let rL, pL;
+    let fJX, fJY, sJX, sJY;
+
+    if (solveTrussActive === false) {
         copyLast();
         typeHistory.push("S");
+    } else if (solveTrussActive === true) {
+        context.putImageData(undoHistory[undoHistory.length - 1], 0, 0);
+    }
+    solveTrussActive = true;
 
-        for (let i of jointArray.sort(function (a, b) {
-            if (a.posX === b.posX)
-                return a.posY - b.posY;
-            return a.posX - b.posX;
-        })) {
-            i.jointLabel = getAlphabet(count);
-            context.font = "bold 14px Cambria";
-            context.fillStyle = "white";
-            context.fillText(i.jointLabel, i.posX - 5, i.posY + 5);
-            A.push([]);
-            A.push([]);
-            count++;
-        }
-        for (let i of jointArray) {
-            for (let j of pinArray) {
-                if (i.posX == j.posX && i.posY == j.posY) {
-                    i.hasPin = true;
-                }
-            }
-            for (let j of rollerArray) {
-                if (i.posX == j.posX && i.posY == j.posY) {
-                    i.hasRoller = true;
-                }
-            }
-            for (let j of loadArray) {
-                if (i.posX == j.posX && i.posY == j.posY) {
-                    i.hasLoad = true;
-                }
+    jointArraySort = [...jointArray];
+    for (let i of jointArraySort.sort(function (a, b) {
+        if (a.posX === b.posX)
+            return a.posY - b.posY;
+        return a.posX - b.posX;
+    })) {
+        i.jointLabel = getAlphabet(count);
+        context.font = "bold 14px Cambria";
+        context.fillStyle = "white";
+        context.fillText(i.jointLabel, i.posX - 5, i.posY + 5);
+        A.push([]);
+        A.push([]);
+        AV.push([]);
+        AV.push([]);
+        count++;
+    }
+    for (let i of jointArraySort) {
+        for (let j of pinArray) {
+            if (i.posX == j.posX && i.posY == j.posY) {
+                i.hasPin = true;
             }
         }
-
-        for (let i of memberArray.sort(function (a, b) {
-            if ((a.startX + a.endX) / 2 === (b.startX + b.endX) / 2)
-                return (a.startY + a.endY) / 2 - (b.startY + b.endY) / 2;
-            return (a.startX + a.endX) / 2 - (b.startX + b.endX) / 2;
-        })) {
-            for (let j of jointArray) {
-                if (i.startX === j.posX && i.startY === j.posY) {
-                    sJoint = j.jointLabel;
-                    earlyS = i.startX;
-                    earlySY = i.startY;
-                } else if (i.endX === j.posX && i.endY === j.posY) {
-                    eJoint = j.jointLabel;
-                    earlyE = i.endX;
-                    earlyEY = i.endY;
-                }
+        for (let j of rollerArray) {
+            if (i.posX == j.posX && i.posY == j.posY) {
+                i.hasRoller = true;
             }
-            if (earlyS < earlyE)
+        }
+        for (let j of loadArray) {
+            if (i.posX == j.posX && i.posY == j.posY) {
+                i.hasLoad = true;
+            }
+        }
+    }
+
+    memberArraySort = [...memberArray];
+    for (let i of memberArraySort.sort(function (a, b) {
+        if ((a.startX + a.endX) / 2 === (b.startX + b.endX) / 2)
+            return (a.startY + a.endY) / 2 - (b.startY + b.endY) / 2;
+        return (a.startX + a.endX) / 2 - (b.startX + b.endX) / 2;
+    })) {
+        for (let j of jointArraySort) {
+            if (i.startX === j.posX && i.startY === j.posY) {
+                sJoint = j.jointLabel;
+                earlyS = i.startX;
+                earlySY = i.startY;
+            } else if (i.endX === j.posX && i.endY === j.posY) {
+                eJoint = j.jointLabel;
+                earlyE = i.endX;
+                earlyEY = i.endY;
+            }
+        }
+        if (earlyS < earlyE)
+            i.memberLabel = sJoint + eJoint;
+        else if (earlyS === earlyE) {
+            if (earlySY < earlyEY)
                 i.memberLabel = sJoint + eJoint;
-            else if (earlyS === earlyE) {
-                if (earlySY < earlyEY)
-                    i.memberLabel = sJoint + eJoint;
-                else
-                    i.memberLabel = eJoint + sJoint;
-            }
             else
                 i.memberLabel = eJoint + sJoint;
-            i.jointA = i.memberLabel.charAt(0);
-            i.jointB = i.memberLabel.charAt(1);
-            allForceLabels.push(i.memberLabel);
         }
-        for (let i = 0; i < 2 * jointArray.length; i++) {
-            for (let j = 0; j < 2 * jointArray.length; j++)
-                A[i].push(0);
-            b.push(0);
-        }
-        for (let i of pinArray) {
-            for (let j of jointArray) {
-                if (i.posX === j.posX && i.posY === j.posY) {
-                    i.pinLabelX = "P" + j.jointLabel + "x";
-                    i.pinLabelY = "P" + j.jointLabel + "y";
-                    allForceLabels.push(i.pinLabelX);
-                    allForceLabels.push(i.pinLabelY);
-                    pL = j.jointLabel;
-                    break;
-                }
-            }
-        }
-        for (let i of rollerArray) {
-            for (let j of jointArray) {
-                if (i.posX === j.posX && i.posY === j.posY) {
-                    i.rollerLabel = "R" + j.jointLabel + "y";
-                    allForceLabels.push(i.rollerLabel);
-                    rL = j.jointLabel;
-                    break;
-                }
-            }
-        }
-        for (let i of loadArray) {
-            for (let j of jointArray) {
-                if (i.posX === j.posX && i.posY === j.posY) {
-                    i.loadLabel = j.jointLabel;
-                    break;
-                }
-            }
-        }
-
-        for (let i of memberArray) {
-            for (let j of jointArray) {
-                if (i.jointA === j.jointLabel) {
-                    fJX = j.posX;
-                    fJY = j.posY;
-                } else if (i.jointB === j.jointLabel) {
-                    sJX = j.posX;
-                    sJY = j.posY;
-                }
-            }
-            if (fJX <= sJX) {
-                i.direcNumEW = 1;
-            } else {
-                i.direcNumEW = -1;
-            }
-            if (fJY >= sJY) {
-                i.direcNumNS = 1;
-            } else {
-                i.direcNumNS = -1;
-            }
-        }
-
-        //Main Calculation Loop
-        let cnt = 0, loadMag = 0;
-        for (let i of jointArray) {
-            if (i.hasPin === true) {
-                A[cnt][allForceLabels.indexOf("P" + pL + "x")] = 1;
-                A[cnt + 1][allForceLabels.indexOf("P" + pL + "y")] = 1;
-            }
-            if (i.hasRoller === true) {
-                A[cnt + 1][allForceLabels.indexOf("R" + rL + "y")] = 1;
-            }
-            if (i.hasLoad === true) {
-                let nameLoad = "", loadCount = 0;
-                for (let j of loadArray) {
-                    if (j.posX === i.posX && j.posY === i.posY) {
-                        loadMag = j.mag;
-                        nameLoad = j.loadLabel;
-                    }
-                }
-                for (let j of jointArray) {
-                    if (j.jointLabel === nameLoad) {
-                        b[loadCount + 1] = loadMag;
-                        break;
-                    }
-                    loadCount += 2;
-                }
-            }
-            for (let j of memberArray) {
-                if (j.jointA === i.jointLabel) {
-                    A[cnt][allForceLabels.indexOf(j.memberLabel)] = j.direcNumEW * Math.cos(j.angle / 360 * 2 * Math.PI);
-                    A[cnt + 1][allForceLabels.indexOf(j.memberLabel)] = j.direcNumNS * Math.sin(j.angle / 360 * 2 * Math.PI);
-                } else if (j.jointB === i.jointLabel) {
-                    A[cnt][allForceLabels.indexOf(j.memberLabel)] = -1 * j.direcNumEW * Math.cos(j.angle / 360 * 2 * Math.PI);
-                    A[cnt + 1][allForceLabels.indexOf(j.memberLabel)] = -1 * j.direcNumNS * Math.sin(j.angle / 360 * 2 * Math.PI);
-                }
-            }
-            cnt += 2;
-        }
-
-        let x = solve(A, b);
-
-        console.log(x);
-        console.log(allForceLabels);
-
-        let fields = ["Member", "Load (kN)"];
-        let headRow = document.createElement("tr");
-        fields.forEach(function (field) {
-            let headCell = document.createElement("th");
-            headCell.textContent = field;
-            headRow.appendChild(headCell);
-        });
-        loadTable.appendChild(headRow);
-
-        let c = 0;
-        for (let i of allForceLabels) {
-            let row = document.createElement("tr");
-            let cell1 = document.createElement("td");
-            let cell2 = document.createElement("td");
-            cell1.textContent = i;
-            cell1.style.textAlign = "center";
-            cell2.textContent = Math.round(x[c] * 1000) / 1000;
-            cell2.style.textAlign = "center";
-            row.appendChild(cell1);
-            row.appendChild(cell2);
-            loadTable.appendChild(row);
-            c++;
-        }
-        loadDiv.appendChild(loadTable);
+        else
+            i.memberLabel = eJoint + sJoint;
+        i.jointA = i.memberLabel.charAt(0);
+        i.jointB = i.memberLabel.charAt(1);
+        allForceLabels.push(i.memberLabel);
     }
+    for (let i = 0; i < 2 * jointArraySort.length; i++) {
+        for (let j = 0; j < 2 * jointArraySort.length; j++) {
+            A[i].push(0);
+            AV[i].push(0);
+        }
+        b.push(0);
+        bV.push(0);
+    }
+    for (let i of pinArray) {
+        for (let j of jointArraySort) {
+            if (i.posX === j.posX && i.posY === j.posY) {
+                i.pinLabelX = "P" + j.jointLabel + "x";
+                i.pinLabelY = "P" + j.jointLabel + "y";
+                allForceLabels.push(i.pinLabelX);
+                allForceLabels.push(i.pinLabelY);
+                pL = j.jointLabel;
+                break;
+            }
+        }
+    }
+    for (let i of rollerArray) {
+        for (let j of jointArraySort) {
+            if (i.posX === j.posX && i.posY === j.posY) {
+                i.rollerLabel = "R" + j.jointLabel + "y";
+                allForceLabels.push(i.rollerLabel);
+                rL = j.jointLabel;
+                break;
+            }
+        }
+    }
+    for (let i of loadArray) {
+        for (let j of jointArraySort) {
+            if (i.posX === j.posX && i.posY === j.posY) {
+                i.loadLabel = j.jointLabel;
+                break;
+            }
+        }
+    }
+
+    for (let i of memberArraySort) {
+        for (let j of jointArraySort) {
+            if (i.jointA === j.jointLabel) {
+                fJX = j.posX;
+                fJY = j.posY;
+            } else if (i.jointB === j.jointLabel) {
+                sJX = j.posX;
+                sJY = j.posY;
+            }
+        }
+        if (fJX <= sJX) {
+            i.direcNumEW = 1;
+        } else {
+            i.direcNumEW = -1;
+        }
+        if (fJY >= sJY) {
+            i.direcNumNS = 1;
+        } else {
+            i.direcNumNS = -1;
+        }
+    }
+
+    //Main Calculation Loop
+    let cnt = 0, loadMag = 0;
+    for (let i of jointArraySort) {
+        if (i.hasPin === true) {
+            A[cnt][allForceLabels.indexOf("P" + pL + "x")] = 1;
+            A[cnt + 1][allForceLabels.indexOf("P" + pL + "y")] = 1;
+            AV[cnt][allForceLabels.indexOf("P" + pL + "x")] = 1;
+            AV[cnt + 1][allForceLabels.indexOf("P" + pL + "y")] = 1;
+        }
+        if (i.hasRoller === true) {
+            A[cnt + 1][allForceLabels.indexOf("R" + rL + "y")] = 1;
+            AV[cnt + 1][allForceLabels.indexOf("R" + rL + "y")] = 1;
+        }
+        if (i.hasLoad === true) {
+            let nameLoad = "", loadCount = 0;
+            for (let j of loadArray) {
+                if (j.posX === i.posX && j.posY === i.posY) {
+                    loadMag = j.mag;
+                    nameLoad = j.loadLabel;
+                }
+            }
+            for (let j of jointArraySort) {
+                if (j.jointLabel === nameLoad) {
+                    b[loadCount + 1] = loadMag;
+                    break;
+                }
+                loadCount += 2;
+            }
+        }
+        if (i.jointLabel === virtualText.value) {
+            bV[cnt + 1] = 1;
+        }
+        for (let j of memberArraySort) {
+            if (j.jointA === i.jointLabel) {
+                A[cnt][allForceLabels.indexOf(j.memberLabel)] = j.direcNumEW * Math.cos(j.angle / 360 * 2 * Math.PI);
+                A[cnt + 1][allForceLabels.indexOf(j.memberLabel)] = j.direcNumNS * Math.sin(j.angle / 360 * 2 * Math.PI);
+                AV[cnt][allForceLabels.indexOf(j.memberLabel)] = j.direcNumEW * Math.cos(j.angle / 360 * 2 * Math.PI);
+                AV[cnt + 1][allForceLabels.indexOf(j.memberLabel)] = j.direcNumNS * Math.sin(j.angle / 360 * 2 * Math.PI);
+            } else if (j.jointB === i.jointLabel) {
+                A[cnt][allForceLabels.indexOf(j.memberLabel)] = -1 * j.direcNumEW * Math.cos(j.angle / 360 * 2 * Math.PI);
+                A[cnt + 1][allForceLabels.indexOf(j.memberLabel)] = -1 * j.direcNumNS * Math.sin(j.angle / 360 * 2 * Math.PI);
+                AV[cnt][allForceLabels.indexOf(j.memberLabel)] = -1 * j.direcNumEW * Math.cos(j.angle / 360 * 2 * Math.PI);
+                AV[cnt + 1][allForceLabels.indexOf(j.memberLabel)] = -1 * j.direcNumNS * Math.sin(j.angle / 360 * 2 * Math.PI);
+            }
+        }
+        cnt += 2;
+    }
+
+    // Solve Regular and Virtual Truss through Gaussian Elimination
+
+    let x = solve(A, b);
+    let xV = solve(AV, bV);
+
+    let virtual = false;
+    for (let i of xV) {
+        if (i !== 0) {
+            virtual = true;
+        }
+    }
+    if (virtual == false) {
+        for (let i = 0; i < xV.length; i++) {
+            xV[i] = "-";
+        }
+    }
+
+    //Outputs results in a table to the user
+
+    deleteTable();
+    let fields = ["Member", "Length (m)", "Angle (deg)", "Load (kN)", "Virtual (kN)"];
+    let headRow = document.createElement("tr");
+    fields.forEach(function (field) {
+        let headCell = document.createElement("th");
+        headCell.textContent = field;
+        headRow.appendChild(headCell);
+    });
+    loadTable.appendChild(headRow);
+
+    let c = 0;
+    for (let i of allForceLabels) {
+        let row = document.createElement("tr");
+        let cell1 = document.createElement("td");
+        let cell2 = document.createElement("td");
+        let cell3 = document.createElement("td");
+        let cell4 = document.createElement("td");
+        let cell5 = document.createElement("td");
+        cell1.textContent = i;
+        cell1.style.textAlign = "center";
+        cell2.textContent = memberArraySort[c].len;
+        cell2.style.textAlign = "center";
+        cell3.textContent = memberArraySort[c].angle;
+        cell3.style.textAlign = "center";
+        cell4.textContent = Math.round(x[c] * 1000) / 1000;
+        cell4.style.textAlign = "center";
+        if (virtual == true)
+            cell5.textContent = Math.round(xV[c] * 10000) / 10000;
+        else
+            cell5.textContent = xV[c];
+        cell5.style.textAlign = "center";
+        row.appendChild(cell1);
+        row.appendChild(cell2);
+        row.appendChild(cell3);
+        row.appendChild(cell4);
+        row.appendChild(cell5);
+        loadTable.appendChild(row);
+        c++;
+    }
+    loadDiv.appendChild(loadTable);
 }
 
 function deleteTable() { // Deletes the rows of the existing table
     while (loadTable.hasChildNodes()) {
         loadTable.removeChild(loadTable.firstChild);
     }
+}
+
+function classifyMembers() {
+    
 }
 
 function getAlphabet(count) {
@@ -682,7 +747,6 @@ function diagonalize(M) {
         }
     }
 }
-
 function findPivot(M, k) {
     let i_max = k;
     for (let i = k + 1; i < M.length; ++i) {
@@ -700,13 +764,11 @@ function swap_rows(M, i_max, k) {
         M[k] = temp;
     }
 }
-
 function makeM(A, b) {
     for (let i = 0; i < A.length; ++i) {
         A[i].push(b[i]);
     }
 }
-
 function substitute(M) {
     let m = M.length;
     for (let i = m - 1; i >= 0; --i) {
@@ -719,7 +781,6 @@ function substitute(M) {
         M[i][i] = 1;
     }
 }
-
 function extractX(M) {
     let x = [];
     let m = M.length;
@@ -729,15 +790,12 @@ function extractX(M) {
     }
     return x;
 }
-
 function solve(A, b) {
     makeM(A, b);
     diagonalize(A);
     substitute(A);
-    let x = extractX(A);
-    return x;
+    return extractX(A);
 }
-
 
 //Active Run Code
 //---------------------------------------------------------------------------
