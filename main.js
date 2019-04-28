@@ -1,5 +1,5 @@
 /* Project One: TrussMat
-    This project was started an initated by Siddarth Narasimhan, begun on December 21st, 2018. The goal of this project is to help First Year Engineering Science students with the first bridge project they must complete in CIV102, a civil engineering stuctures course. This truss solver solves statically determinate truss bridges with the method of joints, solves the virtual truss, gives you the best possible HSS configuration and outputs all data in a table.
+    This project was started on December 21st, 2018. The goal of this project is to help First Year Engineering Science students with the first bridge project they must complete in CIV102, a civil engineering stuctures course. This truss solver solves statically determinate truss bridges with the method of joints, solves the virtual truss, gives you the best possible HSS configuration, finds the virtual work and outputs all data in a table.
 */
 "use strict";   //Helpful for debugging
 
@@ -84,7 +84,16 @@ function Member(startX, startY, endX, endY, len, angle) {
     this.jointB = "";
     this.direcNumEW;
     this.direcNumNS;
+    this.stressForce;
+    this.virtualForce;
+    this.areaHSS;
+    this.moiHSS;
+    this.rGyrHSS;
+    this.nAreaHSS;
+    this.nMoiHSS;
+    this.nRGyrHSS;
     this.HSS;
+    this.vWork;
 
     context.beginPath();
     context.moveTo(this.startX, this.startY);
@@ -603,6 +612,11 @@ function solveTruss() {
     let x = solve(A, b);
     let xV = solve(AV, bV);
 
+    for (let i = 0; i < memberArraySort.length; i++) {
+        memberArraySort[i].stressForce = x[i];
+        memberArraySort[i].virtualForce = xV[i];
+    }
+
     let virtual = false;
     for (let i of xV) {
         if (i !== 0) {
@@ -615,10 +629,12 @@ function solveTruss() {
         }
     }
 
+    setHSS();
+
     //Outputs results in a table to the user
 
     deleteTable();
-    let fields = ["Member", "Length (m)", "Angle (deg)", "Load (kN)", "Virtual (kN)"];
+    let fields = ["Member", "Length (m)", "Angle (deg)", "Load (kN)", "Virtual (kN)", "Area (mm^2)", "Moment of Inertia (10^6 mm^4)", "Radius of Gyration (mm)", "HSS Area (mm^2)", "HSS Moment of Inertia (10^6 mm^4)", "HSS Radius of Gyration (mm)", "Best HSS Configuration (mm x mm x mm)", "Virtual Work (J)"];
     let headRow = document.createElement("tr");
     fields.forEach(function (field) {
         let headCell = document.createElement("th");
@@ -635,24 +651,74 @@ function solveTruss() {
         let cell3 = document.createElement("td");
         let cell4 = document.createElement("td");
         let cell5 = document.createElement("td");
+        let cell6 = document.createElement("td");
+        let cell7 = document.createElement("td");
+        let cell8 = document.createElement("td");
+        let cell9 = document.createElement("td");
+        let cella = document.createElement("td");
+        let cellb = document.createElement("td");
+        let cellc = document.createElement("td");
+        let celld = document.createElement("td");
         cell1.textContent = i;
+        if (c < memberArraySort.length) {
+            cell2.textContent = memberArraySort[c].len;
+            cell3.textContent = memberArraySort[c].angle;
+            cell4.textContent = Math.round(x[c] * 1000) / 1000;
+            if (virtual == true)
+                cell5.textContent = Math.round(xV[c] * 10000) / 10000;
+            else
+                cell5.textContent = xV[c];
+            cell6.textContent = Math.round(memberArraySort[c].areaHSS * 1000) / 1000;
+            if (memberArraySort[c].moiHSS != "-")
+                cell7.textContent = Math.round(memberArraySort[c].moiHSS * 1000) / 1000;
+            else
+                cell7.textContent = memberArraySort[c].moiHSS;
+            cell8.textContent = Math.round(memberArraySort[c].rGyrHSS * 1000) / 1000;
+            cell9.textContent = memberArraySort[c].nAreaHSS;
+            cella.textContent = memberArraySort[c].nMoiHSS;
+            cellb.textContent = memberArraySort[c].nRGyrHSS;
+            cellc.textContent = memberArraySort[c].HSS;
+            celld.textContent = Math.round(memberArraySort[c].vWork * 1000) / 1000;
+        } else {
+            cell2.textContent = "-";
+            cell3.textContent = "-";
+            cell4.textContent = Math.round(x[c] * 1000) / 1000;
+            cell5.textContent = "-";
+            cell6.textContent = "-";
+            cell7.textContent = "-";
+            cell8.textContent = "-";
+            cell9.textContent = "-";
+            cella.textContent = "-";
+            cellb.textContent = "-";
+            cellc.textContent = "-";
+            celld.textContent = "-";
+        }
         cell1.style.textAlign = "center";
-        cell2.textContent = memberArraySort[c].len;
         cell2.style.textAlign = "center";
-        cell3.textContent = memberArraySort[c].angle;
         cell3.style.textAlign = "center";
-        cell4.textContent = Math.round(x[c] * 1000) / 1000;
         cell4.style.textAlign = "center";
-        if (virtual == true)
-            cell5.textContent = Math.round(xV[c] * 10000) / 10000;
-        else
-            cell5.textContent = xV[c];
         cell5.style.textAlign = "center";
+        cell6.style.textAlign = "center";
+        cell7.style.textAlign = "center";
+        cell8.style.textAlign = "center";
+        cell9.style.textAlign = "center";
+        cella.style.textAlign = "center";
+        cellb.style.textAlign = "center";
+        cellc.style.textAlign = "center";
+        celld.style.textAlign = "center";
         row.appendChild(cell1);
         row.appendChild(cell2);
         row.appendChild(cell3);
         row.appendChild(cell4);
         row.appendChild(cell5);
+        row.appendChild(cell6);
+        row.appendChild(cell7);
+        row.appendChild(cell8);
+        row.appendChild(cell9);
+        row.appendChild(cella);
+        row.appendChild(cellb);
+        row.appendChild(cellc);
+        row.appendChild(celld);
         loadTable.appendChild(row);
         c++;
     }
@@ -665,8 +731,156 @@ function deleteTable() { // Deletes the rows of the existing table
     }
 }
 
-function classifyMembers() {
-    
+function findBestHSS(a, m, r) {
+    if (a <= 216 && m <= 0.018 && r <= 9.12) // Mass: 1.69 kg/m
+        return [216, 0.018, 9.12, "25 x 25 x 2.5"];
+    if (a <= 257 && m <= 0.02 && r <= 8.79) // Mass: 2.01 kg/m
+        return [257, 0.02, 879, "25 x 25 x 3.2"];
+    if (a <= 281 && m <= 0.039 && r <= 11.7) // Mass: 2.20 kg/m
+        return [281, 0.039, 11.7, "32 x 32 x 2.5"];
+    if (a <= 338 && m <= 0.044 && r <= 11.4) // Mass: 2.65 kg/m
+        return [338, 0.044, 11.4, "32 x 32 x 3.2"];
+    if (a <= 345 && m <= 0.071 && r <= 14.3) // Mass: 2.71 kg/m
+        return [345, 0.071, 14.3, "38 x 38 x 2.5"];
+    if (a <= 389 && m <= 0.048 && r <= 11.1) // Mass: 3.06 kg/m
+        return [389, 0.048, 11.1, "32 x 32 x 3.8"];
+    if (a <= 418 && m <= 0.082 && r <= 14) // Mass: 3.28 kg/m
+        return [418, 0.082, 14, "38 x 38 x 3.2"];
+    if (a <= 485 && m <= 0.091 && r <= 13.7) // Mass: 3.81 kg/m
+        return [485, 0.091, 13.7, "38 x 38 x 3.8"];
+    if (a <= 516 && m <= 0.194 && r <= 19.4) // Mass: 4.05 kg/m
+        return [516, 0.194, 19.4, "51 x 51 x 2.8"];
+    if (a <= 578 && m <= 0.1 && r <= 13.2) // Mass: 4.54 kg/m
+        return [578, 0.1, 13.2, "38 x 38 x 4.8"];
+    if (a <= 580 && m <= 0.214 && r <= 19.2) // Mass: 4.55 kg/m
+        return [580, 0.214, 19.2, "51 x 51 x 3.2"];
+    if (a <= 679 && m <= 0.242 && r <= 18.9) // Mass: 5.33 kg/m
+        return [679, 0.242, 18.9, "51 x 51 x 3.8"];
+    if (a <= 741 && m <= 0.441 && r <= 24.4) // Mass: 5.82 kg/m
+        return [741, 0.441, 24.4, "64 x 64 x 3.2"];
+    if (a <= 821 && m <= 0.278 && r <= 18.4) // Mass: 6.45 kg/m
+        return [821, 0.278, 18.4, "51 x 51 x 4.8"];
+    if (a <= 872 && m <= 0.506 && r <= 24.1) // Mass: 6.85 kg/m
+        return [872, 0.506, 24.1, "64 x 64 x 3.8"];
+    if (a <= 1030 && m <= 0.317 && r <= 17.6) // Mass: 8.05 kg/m
+        return [1030, 0.317, 17.6, "51 x 51 x 6.4"];
+    if (a <= 1060 && m <= 0.593 && r <= 23.6) // Mass: 8.35 kg/m
+        return [1060, 0.593, 23.6, "64 x 64 x 4.8"];
+    if (a <= 1310 && m <= 1.08 && r <= 28.8) // Mass: 10.3 kg/m
+        return [1310, 1.08, 28.8, "76 x 76 x 4.8"];
+    if (a <= 1350 && m <= 0.701 && r <= 22.8) // Mass: 10.6 kg/m
+        return [1350, 0.701, 22.8, "64 x 64 x 6.4"];
+    if (a <= 1550 && m <= 1.79 && r <= 34) // Mass: 12.2 kg/m
+        return [1550, 1.79, 34, "89 x 89 x 4.8"];
+    if (a <= 1670 && m <= 1.31 && r <= 28) // Mass: 13.1 kg/m
+        return [1670, 1.31, 28, "76 x 76 x 6.4"];
+    if (a <= 1790 && m <= 2.75 && r <= 39.2) // Mass: 14.1 kg/m
+        return [1790, 2.75, 39.2, "102 x 102 x 4.8"];
+    if (a <= 1990 && m <= 2.20 && r <= 33.2) // Mass: 15.6 kg/m
+        return [1990, 2.20, 33.2, "89 x 89 x 6.4"];
+    if (a <= 2010 && m <= 1.49 && r <= 27.2) // Mass: 15.8 kg/m
+        return [2010, 1.49, 27.2, "76 x 76 x 8.0"];
+    if (a <= 2280 && m <= 5.6 && r <= 49.6) // Mass: 17.9 kg/m
+        return [2280, 5.6, 49.6, "127 x 127 x 4.8"];
+    if (a <= 2320 && m <= 3.42 && r <= 38.4) // Mass: 18.2 kg/m
+        return [2320, 3.42, 38.4, "102 x 102 x 6.4"];
+    if (a <= 2410 && m <= 2.53 && r <= 32.4) // Mass: 18.9 kg/m
+        return [2410, 2.53, 32.4, "89 x 89 x 8.0"];
+    if (a <= 2760 && m <= 9.93 && r <= 59.9) // Mass: 21.7 kg/m
+        return [2760, 9.93, 59.9, "152 x 152 x 4.8"];
+    if (a <= 2790 && m <= 2.79 && r <= 31.6) // Mass: 21.9 kg/m
+        return [2790, 2.79, 31.6, "89 x 89 x 9.5"];
+    if (a <= 2820 && m <= 3.98 && r <= 37.6) // Mass: 22.1 kg/m
+        return [2820, 3.98, 37.6, "102 x 102 x 8.0"];
+    if (a <= 2960 && m <= 7.05 && r <= 48.8) // Mass: 23.2 kg/m
+        return [2960, 7.05, 48.8, "127 x 127 x 6.4"];
+    if (a <= 3250 && m <= 16.1 && r <= 70.3) // Mass: 25.5 kg/m
+        return [3250, 16.1, 70.3, "178 x 178 x 4.8"];
+    if (a <= 3280 && m <= 4.44 && r <= 36.8) // Mass: 25.7 kg/m
+        return [3280, 4.44, 36.8, "102 x 102 x 9.5"];
+    if (a <= 3610 && m <= 12.6 && r <= 59.2) // Mass: 28.3 kg/m
+        return [3610, 12.6, 59.2, "152 x 152 x 6.4"];
+    if (a <= 3620 && m <= 8.35 && r <= 48) // Mass: 28.4 kg/m
+        return [3620, 8.35, 48, "127 x 127 x 8.0"];
+    if (a <= 4240 && m <= 9.47 && r <= 47.2) // Mass: 33.3 kg/m
+        return [4240, 9.47, 47.2, "127 x 127 x 9.5"];
+    if (a <= 4250 && m <= 20.6 && r <= 69.6) // Mass: 33.4 kg/m
+        return [4250, 20.6, 69.6, "178 x 178 x 6.4"];
+    if (a <= 4430 && m <= 15.1 && r <= 58.4) // Mass: 34.8 kg/m
+        return [4430, 15.1, 58.4, "152 x 152 x 8.0"];
+    if (a <= 4840 && m <= 10.4 && r <= 46.4) // Mass: 38.0 kg/m
+        return [4840, 10.4, 46.4, "127 x 127 x 11"];
+    if (a <= 4900 && m <= 31.3 && r <= 79.9) // Mass: 38.4 kg/m
+        return [4900, 31.3, 79.9, "203 x 203 x 6.4"];
+    if (a <= 5210 && m <= 17.3 && r <= 57.6) // Mass: 40.9 kg/m
+        return [5210, 17.3, 57.6, "152 x 152 x 9.5"];
+    if (a <= 5240 && m <= 24.8 && r <= 68.8) // Mass: 41.1 kg/m
+        return [5240, 24.8, 68.8, "178 x 178 x 8.0"];
+    if (a <= 5970 && m <= 19.3 && r <= 56.8) // Mass: 46.9 kg/m
+        return [5970, 19.3, 56.8, "152 x 152 x 11"];
+    if (a <= 6050 && m <= 37.9 && r <= 79.2) // Mass: 47.5 kg/m
+        return [6050, 37.9, 79.2, "203 x 203 x 8.0"];
+    if (a <= 6180 && m <= 28.6 && r <= 68) // Mass: 48.5 kg/m
+        return [6180, 28.6, 68, "178 x 178 x 9.5"];
+    if (a <= 6190 && m <= 62.7 && r <= 101) // Mass: 48.6 kg/m
+        return [6190, 62.7, 101, "254 x 254 x 6.4"];
+    if (a <= 6680 && m <= 21 && r <= 56) // Mass: 52.4 kg/m
+        return [6680, 21, 56, "152 x 152 x 13"];
+    if (a <= 7100 && m <= 32.1 && r <= 67.2) // Mass: 55.7 kg/m
+        return [7100, 32.1, 67.2, "178 x 178 x 11"];
+    if (a <= 7150 && m <= 43.9 && r <= 78.4) // Mass: 56.1 kg/m
+        return [7150, 43.9, 78.4, "203 x 203 x 9.5"];
+    if (a <= 7480 && m <= 110 && r <= 121) // Mass: 58.7 kg/m
+        return [7480, 110, 121, "305 x 305 x 6.4"];
+    if (a <= 7660 && m <= 76.5 && r <= 99.9) // Mass: 60.1 kg/m
+        return [7660, 76.5, 99.9, "254 x 254 x 8.0"];
+    if (a <= 7970 && m <= 35.2 && r <= 66.4) // Mass: 62.6 kg/m
+        return [7970, 35.2, 66.4, "178 x 178 x 13"];
+    if (a <= 8230 && m <= 49.6 && r <= 77.6) // Mass: 64.6 kg/m
+        return [8230, 49.6, 77.6, "203 x 203 x 11"];
+    if (a <= 9090 && m <= 89.3 && r <= 99.1) // Mass: 71.3 kg/m
+        return [9090, 89.3, 99.1, "254 x 254 x 9.5"];
+    if (a <= 9260 && m <= 54.7 && r <= 76.8) // Mass: 72.7 kg/m
+        return [9260, 54.7, 76.8, "203 x 203 x 13"];
+    if (a <= 9280 && m <= 135 && r <= 121) // Mass: 72.8 kg/m
+        return [9280, 135, 121, "305 x 305 x 8.0"];
+    if (a <= 10500 && m <= 102 && r <= 98.4) // Mass: 82.4 kg/m
+        return [10500, 102, 98.4, "254 x 254 x 11"];
+    if (a <= 11000 && m <= 158 && r <= 120) // Mass: 86.5 kg/m
+        return [11000, 158, 120, "305 x 305 x 9.5"];
+    if (a <= 11800 && m <= 113 && r <= 97.6) // Mass: 93.0 kg/m
+        return [11800, 113, 97.6, "254 x 254 x 13"];
+    if (a <= 12800 && m <= 181 && r <= 119) // Mass: 100 kg/m
+        return [12800, 181, 119, "305 x 305 x 11"];
+    if (a <= 14400 && m <= 202 && r <= 118) // Mass: 113 kg/m
+        return [14400, 202, 118, "305 x 305 x 13"];
+    else
+        return ["N/A", "N/A", "N/A", "N/A"];
+}
+
+function setHSS() {
+    let areaFOS = 2;
+    let moiFOS = 3;
+    let yieldF = 350;
+    let rGyrCheck = 200;
+    let E = 200000;
+    let moi = 0;
+    for (let i of memberArraySort) {
+        i.areaHSS = (Math.abs(i.stressForce) * 1000) * areaFOS / yieldF;
+        if (i.stressForce < 0) {
+            i.moiHSS = (Math.abs(i.stressForce) * 1000 * i.len * i.len * 1000 * 1000 * moiFOS) / (Math.pow(Math.PI, 2) * E * Math.pow(10, 6));
+            moi = i.moiHSS;
+        } else {
+            i.moiHSS = "-";
+        }
+        i.rGyrHSS = (i.len * 1000) / rGyrCheck;
+        let config = findBestHSS(i.areaHSS, moi, i.rGyrHSS);
+        i.nAreaHSS = config[0];
+        i.nMoiHSS = config[1];
+        i.nRGyrHSS = config[2];
+        i.HSS = config[3];
+        i.vWork = (i.stressForce * 1000 * i.len * 1000 * i.virtualForce) / (E * i.nAreaHSS);
+    }
 }
 
 function getAlphabet(count) {

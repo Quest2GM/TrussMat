@@ -1,5 +1,5 @@
 # TrussMat: Statically Determinate Truss Bridge Solver for EngSci Students
-This project was started on December 21st, 2018. The goal of this project is to help First Year Engineering Science students at the University of Toronto with the first bridge project they must complete in CIV102, a civil engineering structural design course. This truss solver solves statically determinate truss bridges with the method of joints, solves the virtual truss bridge at a specified joint and gives you the best possible HSS configuration for each member of the truss.
+This project was started on December 21st, 2018. The goal of this project is to help First Year Engineering Science students at the University of Toronto with the first bridge project they must complete in CIV102, a civil engineering structural design course. This truss solver solves statically determinate truss bridges with the method of joints, solves the virtual truss bridge at a specified joint, gives you the best possible HSS configuration for each member of the truss and solves the virtual work of the truss.
 
 Project Working Status: In Progress (as of 16-Apr-2019).
 
