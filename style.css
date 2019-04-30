@@ -20,3 +20,53 @@ body {
     border: 2px #000;
     font-family: Tahoma, Geneva, sans-serif;
 }
+
+.canv {
+    font-family: Tahoma, Geneva, sans-serif;
+    font-size: 10pt;
+}
+
+.modal {
+    display:none;
+    position:fixed;
+    z-index: 1;
+    left:0;
+    top:0;
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modalContent {
+    background-color: #f4f4f4;
+    margin: 20% auto;
+    width:70%;
+    box-shadow: 0 5px 8px 0 rgba(0, 0, 0, 0.17), 0 7px 20px 0 rgba(0, 0, 0, 0.17);
+}
+
+.closeModalBtn {
+    color: #fff;
+    float: right;
+    font-size:30px;
+}
+
+.closeModalBtn:hover, .closeModalBtn:focus {
+    color: #000;
+    text-decoration:none;
+    cursor:pointer;
+}
+
+.modalHeader h2 {
+    margin:0;
+}
+
+.modalHeader {
+    background: #5e90e0;
+    padding:15px;
+    color:white;
+}
+
+.modalBody {
+    padding:10px 20px;
+}

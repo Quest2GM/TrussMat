@@ -25,6 +25,7 @@ let endY;                  //Stores the end y-coordinate of the joint
 let mousePos;              //Gets the x and y coordinate of the user's cursor at a specific instance
 let len;                    //The length of the joint that is created in metres
 let angle;                 //The acute angle to the horizontal of the joint-member in degrees
+let angleDisplayed;
 let actualSize = 52;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
 
 //Paragraph Changer Variables
@@ -37,6 +38,14 @@ let loadDiv = document.getElementById("loadDiv");
 let loadTable = document.getElementById("loadTable");
 let virtualText = document.getElementById("virtualText");
 let yieldText = document.getElementById("yieldText");
+let modOfEText = document.getElementById("modOfEText");
+let canvLText = document.getElementById("canvLText");
+let canvAText = document.getElementById("canvAText");
+let canvLLabel = document.getElementById("canvLLabel");
+let canvALabel = document.getElementById("canvALabel");
+let errorModal = document.getElementById("errorModal");
+let errorModalBody = document.getElementById("modalBodyText");
+let closeModalBtn = document.getElementsByClassName("closeModalBtn")[0];
 
 //Member Property Variables
 let newMember;           //When a new member is created with its respective constructor, it is stored in this variable
@@ -46,6 +55,7 @@ let currStartX;          //When the user clicks in the joint to begin a new memb
 let currStartY;          //When the user clicks in the joint to begin a new member, stores the y-coordinate
 let currEndX;            //When the user clicks in the joint to end a new member, stores the x-coordinate
 let currEndY;            //When the user clicks in the joint to end a new member, stores the y-coordinate
+let useCurr = false;
 
 //Joint Property Variables
 let newJoint;                           //When a new joint is created with its repective constructor, it is stored in this variable
@@ -70,6 +80,10 @@ let currY;              //Stores the y-coordinate if the user clicks in a joint 
 //Undo History
 let undoHistory = [];   //For the undo button functionality.
 let typeHistory = [];   //To track what was added to the canvas
+
+//Other
+let switAngText = false;
+let enterFunc = false;
 
 //Constructor Function to build new members, joints, pins loads and rollers
 function Member(startX, startY, endX, endY, len, angle) {
@@ -171,11 +185,11 @@ function tempMember(posX, posY) {
     if (clickedStartMouseInJoint) {
         context.moveTo(currStartX, currStartY);
         len = calcLength(posY, currStartY, posX, currStartX);
-        angle = calcAngle(posY, currStartY, posX, currStartX);
+        angle = calcRealAngle(posY, currStartY, posX, currStartX);
     } else {
         context.moveTo(startX, startY);
         len = calcLength(posY, startY, posX, startX);
-        angle = calcAngle(posY, startY, posX, startX);
+        angle = calcRealAngle(posY, startY, posX, startX);
     }
     lengthText.textContent = "Length: " + len + " m";
     angleText.textContent = "Angle: " + angle + " deg";
@@ -230,6 +244,16 @@ function calcLength(y2, y1, x2, x1) {
 function calcAngle(y2, y1, x2, x1) {
     return Math.floor((Math.abs((Math.atan((y2 - y1) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
 }
+function calcRealAngle(y2, y1, x2, x1) {
+    if (y2 < y1 && x2 < x1) // Quadrant 2
+        return 180 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+    else if (y2 > y1 && x2 < x1) // Quadrant 3
+        return 180 + Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+    else if (y2 > y1 && x2 > x1) // Quadrant 4
+        return 360 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+    else // Quadrant 1
+        return Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+}
 function distanceBetween(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
@@ -267,6 +291,11 @@ function reset() {
     clickedEndMouseInJoint = false;
     startJointVisible = true;
     endJointVisible = true;
+    canvLText.value = "";
+    canvAText.value = "";
+    useCurr = false;
+    switAngText = false;
+    enterFunc = false;
 }
 
 //MouseDown Functions
@@ -277,8 +306,10 @@ function createMember() {
         startY = mousePos.y;
         copyLast();
         if (inJoint()) {
+            useCurr = true;
             tempJoint(currStartX, currStartY, "#909696");
         } else {
+            useCurr = false;
             tempJoint(startX, startY, "#909696");
         }
         takeSnapShot();
@@ -303,6 +334,7 @@ function createMember() {
         //Calculate Lengths and Angles
         len = calcLength(endY, startY, endX, startX);
         angle = calcAngle(endY, startY, endX, startX);
+        angleDisplayed = calcRealAngle(endY, startY, endX, startX);
 
         //Create and Store New Members and Joints
         if (checkCreate(startX, endX, startY, endY) === true) {
@@ -319,14 +351,75 @@ function createMember() {
                 typeHistory.push("J");
             }
             typeHistory.push("M");
+        } else {
+            context.putImageData(undoHistory[undoHistory.length - 1], 0, 0);
+            undoHistory.pop();
+            angleDisplayed = 0;
         }
         //Length and Angle Updates to the Screen
         lengthText.textContent = "Length: " + len + " m";
-        angleText.textContent = "Angle: " + angle + " deg";
+        angleText.textContent = "Angle: " + angleDisplayed + " deg";
 
         //Reset necessary variables to default
         reset();
     }
+}
+
+function createMemberWithKey() {
+    restoreSnapShot();
+    lineBegin = false;
+    if (useCurr) {
+        endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * parseFloat(canvAText.value) / 180)) / (actualSize + 10) + currStartX;
+        endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (parseFloat(canvAText.value) - 180) / 180)) / (actualSize + 10) + currStartY;
+    } else {
+        endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * parseFloat(canvAText.value) / 180)) / (actualSize + 10) + startX;
+        endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (parseFloat(canvAText.value) - 180) / 180)) / (actualSize + 10) + startY;
+    }
+
+    inJoint();
+
+    if (clickedStartMouseInJoint) {
+        startX = currStartX;
+        startY = currStartY;
+        startJointVisible = false;
+    }
+    if (clickedEndMouseInJoint) {
+        endX = currEndX;
+        endY = currEndY;
+        endJointVisible = false;
+    }
+
+    //Calculate Lengths and Angles
+    len = Math.round(parseFloat(canvLText.value) * 100) / 100;
+    angle = calcAngle(endY, startY, endX, startX);
+    angleDisplayed = calcRealAngle(endY, startY, endX, startX);
+
+    //Create and Store New Members and Joints
+    if (checkCreate(startX, endX, startY, endY) === true) {
+        newMember = new Member(startX, startY, endX, endY, len, angle);
+        memberArray.push(newMember);
+        newJoint = new Joint(startX, startY, numMember);
+        if (startJointVisible == true) {
+            jointArray.push(newJoint);
+            typeHistory.push("J");
+        }
+        newJoint = new Joint(endX, endY, numMember);
+        if (endJointVisible == true) {
+            jointArray.push(newJoint);
+            typeHistory.push("J");
+        }
+        typeHistory.push("M");
+    } else {
+        context.putImageData(undoHistory[undoHistory.length - 1], 0, 0);
+        undoHistory.pop();
+        angleDisplayed = 0;
+    }
+    //Length and Angle Updates to the Screen
+    lengthText.textContent = "Length: " + len + " m";
+    angleText.textContent = "Angle: " + angleDisplayed + " deg";
+
+    //Reset necessary variables to default
+    reset();
 }
 
 //Activation and Button Functions
@@ -338,7 +431,8 @@ function memberPinActivate() {
 }
 function pinActivate() {
     if (lineBegin) {
-        console.log("You must first finish creating the current member!");
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "You must first finish creating the current member!";
     } else {
         pinButtonActive = true;
         rollerButtonActive = false;
@@ -348,7 +442,8 @@ function pinActivate() {
 }
 function rollerActivate() {
     if (lineBegin) {
-        console.log("You must first finish creating the current member!");
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "You must first finish creating the current member!";
     } else {
         pinButtonActive = false;
         rollerButtonActive = true;
@@ -358,7 +453,8 @@ function rollerActivate() {
 }
 function loadActivate() {
     if (lineBegin) {
-        console.log("You must first finish creating the current member!");
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "You must first finish creating the current member!";
     } else {
         pinButtonActive = false;
         rollerButtonActive = false;
@@ -367,6 +463,11 @@ function loadActivate() {
     }
 }
 function undoLast() {
+    if (lineBegin) {
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "You must first finish creating the current member!";
+        return;
+    }
     if (undoHistory.length > 0) {
         context.putImageData(undoHistory[undoHistory.length - 1], 0, 0);
         undoHistory.pop();
@@ -393,7 +494,12 @@ function undoLast() {
         typeHistory.pop();
     }
 }
-function removeActivate() {
+function clearAll() {
+    if (lineBegin) {
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "You must first finish creating the current member!";
+        return;
+    }
     context.clearRect(0, 0, canvas.width, canvas.height);
     lengthText.textContent = "Length:";
     angleText.textContent = "Angle:";
@@ -404,19 +510,25 @@ function removeActivate() {
     loadArray = [];
     deleteTable();
     solveTrussActive = false;
+    loadText.value = "";
+    virtualText.value = "";
+    yieldText.value = "";
+    modOfEText.value = "";
 }
 function solveTruss() {
-    if (memberArray.length + 2 * (pinArray.length) + rollerArray.length === 2 * (jointArray.length)) {
-        console.log("Statically Determinate!");
-    } else {
-        console.log("Statically Indeterminate!");
+    if (memberArray.length + 2 * (pinArray.length) + rollerArray.length !== 2 * (jointArray.length)) {
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "Cannot be solved! This bridge is statically indeterminate!";
+        return;
+    }
+
+    if (loadArray.length == 0) {
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "Please add a load to the bridge!";
         return;
     }
 
     let count = 0;
-    if (loadArray.length == 0)
-        console.log("Add a load!");
-
     let A = [], b = [], AV = [], bV = [];
     let sJoint = "";
     let eJoint = "";
@@ -668,22 +780,34 @@ function solveTruss() {
                 cell5.textContent = Math.round(xV[c] * 10000) / 10000;
             else
                 cell5.textContent = xV[c];
-            cell6.textContent = Math.round(memberArraySort[c].areaHSS * 1000) / 1000;
+            if (memberArraySort[c].areaHSS != "-")
+                cell6.textContent = Math.round(memberArraySort[c].areaHSS * 1000) / 1000;
+            else
+                cell6.textContent = memberArraySort[c].areaHSS;
             if (memberArraySort[c].moiHSS != "-")
                 cell7.textContent = Math.round(memberArraySort[c].moiHSS * 1000) / 1000;
             else
                 cell7.textContent = memberArraySort[c].moiHSS;
-            cell8.textContent = Math.round(memberArraySort[c].rGyrHSS * 1000) / 1000;
+            if (memberArraySort[c].rGyrHSS != "-")
+                cell8.textContent = Math.round(memberArraySort[c].rGyrHSS * 1000) / 1000;
+            else
+                cell8.textContent = memberArraySort[c].rGyrHSS;
             cell9.textContent = memberArraySort[c].nAreaHSS;
             cella.textContent = memberArraySort[c].nMoiHSS;
             cellb.textContent = memberArraySort[c].nRGyrHSS;
             cellc.textContent = memberArraySort[c].HSS;
-            celld.textContent = Math.round(memberArraySort[c].vWork * 1000) / 1000;
+            if (memberArraySort[c].vWork != "-")
+                celld.textContent = Math.round(memberArraySort[c].vWork * 1000) / 1000;
+            else
+                celld.textContent = memberArraySort[c].vWork;
         } else {
             cell2.textContent = "-";
             cell3.textContent = "-";
             cell4.textContent = Math.round(x[c] * 1000) / 1000;
-            cell5.textContent = "-";
+            if (virtual == true)
+                cell5.textContent = Math.round(xV[c] * 10000) / 10000;
+            else
+                cell5.textContent = xV[c];
             cell6.textContent = "-";
             cell7.textContent = "-";
             cell8.textContent = "-";
@@ -861,26 +985,40 @@ function findBestHSS(a, m, r) {
 function setHSS() {
     let areaFOS = 2;
     let moiFOS = 3;
-    let yieldF = 350;
+    let yieldF = yieldText.value;
     let rGyrCheck = 200;
-    let E = 200000;
+    let E = modOfEText.value;
     let moi = 0;
-    for (let i of memberArraySort) {
-        i.areaHSS = (Math.abs(i.stressForce) * 1000) * areaFOS / yieldF;
-        if (i.stressForce < 0) {
-            i.moiHSS = (Math.abs(i.stressForce) * 1000 * i.len * i.len * 1000 * 1000 * moiFOS) / (Math.pow(Math.PI, 2) * E * Math.pow(10, 6));
-            moi = i.moiHSS;
-        } else {
-            i.moiHSS = "-";
+    if (yieldText.value != "" && !isNaN(parseInt(yieldText.value)) && modOfEText.value != "" && !isNaN(parseInt(modOfEText.value))) {
+        for (let i of memberArraySort) {
+            i.areaHSS = (Math.abs(i.stressForce) * 1000) * areaFOS / yieldF;
+            if (i.stressForce < 0) {
+                i.moiHSS = (Math.abs(i.stressForce) * 1000 * i.len * i.len * 1000 * 1000 * moiFOS) / (Math.pow(Math.PI, 2) * E * Math.pow(10, 6));
+                moi = i.moiHSS;
+            } else {
+                i.moiHSS = "-";
+            }
+            i.rGyrHSS = (i.len * 1000) / rGyrCheck;
+            let config = findBestHSS(i.areaHSS, moi, i.rGyrHSS);
+            i.nAreaHSS = config[0];
+            i.nMoiHSS = config[1];
+            i.nRGyrHSS = config[2];
+            i.HSS = config[3];
+            i.vWork = (i.stressForce * 1000 * i.len * 1000 * i.virtualForce) / (E * i.nAreaHSS);
         }
-        i.rGyrHSS = (i.len * 1000) / rGyrCheck;
-        let config = findBestHSS(i.areaHSS, moi, i.rGyrHSS);
-        i.nAreaHSS = config[0];
-        i.nMoiHSS = config[1];
-        i.nRGyrHSS = config[2];
-        i.HSS = config[3];
-        i.vWork = (i.stressForce * 1000 * i.len * 1000 * i.virtualForce) / (E * i.nAreaHSS);
+    } else {
+        for (let i of memberArraySort) {
+            i.areaHSS = "-";
+            i.moiHSS = "-";
+            i.rGyrHSS = "-";
+            i.nAreaHSS = "-";
+            i.nMoiHSS = "-";
+            i.nRGyrHSS = "-";
+            i.HSS = "-";
+            i.vWork = "-";
+        }
     }
+
 }
 
 function getAlphabet(count) {
@@ -1078,13 +1216,54 @@ canvas.addEventListener("mousedown", (event) => {
 
 canvas.addEventListener("mousemove", (event) => {
     mousePos = getMousePos(event);
-
-    if (memberJointButtonActive) {
-        if (lineBegin) {
-            restoreSnapShot();
-            tempMember(mousePos.x, mousePos.y);
-        }
+    if (memberJointButtonActive && lineBegin) {
+        restoreSnapShot();
+        tempMember(mousePos.x, mousePos.y);
     }
     posXText.textContent = "X: " + mousePos.x;
     posYText.textContent = "Y: " + mousePos.y;
+});
+
+document.addEventListener("keydown", (e) => {
+    if (memberJointButtonActive && lineBegin) {
+        if (((e.which > 47 && e.which <= 57) || e.which == 190) && !switAngText) {
+            canvLText.value += e.key;
+        } else if ((e.which == 9 || e.which == 13) && !enterFunc) {
+            e.preventDefault();
+            if (canvLText.value == "") {
+                errorModal.style.display = "block";
+                errorModalBody.textContent = "Please enter a valid length!";
+            } else {
+                switAngText = true;
+                enterFunc = true;
+            }
+        } else if (((e.which > 47 && e.which <= 57) || e.which == 190) && switAngText) {
+            canvAText.value += e.key;
+        } else if ((e.which == 9 || e.which == 13) && enterFunc) {
+            e.preventDefault();
+            if (canvAText.value == "") {
+                errorModal.style.display = "block";
+                errorModalBody.textContent = "Please enter a valid angle between 0 and 360 degrees!";
+            } else {
+                createMemberWithKey();
+                switAngText = false;
+                enterFunc = false;
+            }
+        } else if (e.which == 8) {
+            if (!switAngText) {
+                canvLText.value = canvLText.value.substring(0, canvLText.value.length - 1);
+            } else {
+                canvAText.value = canvAText.value.substring(0, canvAText.value.length - 1);
+            }
+        }
+    }
+});
+
+closeModalBtn.addEventListener("click", (e) => {
+    errorModal.style.display = "none";
+});
+
+window.addEventListener("click", (e) => {
+    if (e.target == errorModal)
+        errorModal.style.display = "none";
 });

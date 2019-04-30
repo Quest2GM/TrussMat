@@ -21,12 +21,17 @@
     <canvas id="newCanvas" width="1200" height="600"></canvas>
     <br>
 
+    <input id="canvLText" type="text" style="position:absolute; height:20px; width:70px; top:270px; left:1120px;">
+    <input id="canvAText" type="text" style="position:absolute; height:20px; width:70px; top:305px; left:1120px;">
+    <label id="canvLLabel" class="canv" style="position:absolute; height:20px; width:100px; top:275px; left:1030px"> <strong> Length (m): </strong> </label>
+    <label id="canvALabel" class="canv" style="position:absolute; height:20px; width:110px; top:310px; left:1025px"> <strong> Angle (deg): </strong> </label>
+
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="memberPinActivate()"> ⏹️ Member </button>
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="pinActivate()"> 🔺 Pin </button>
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="rollerActivate()"> 🔴 Roller </button>
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="loadActivate()"> ⬇️ Load </button>
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="undoLast()"> ↩️ Undo </button>
-    <button class="canvButtons" , style="height:40px; width:150px" , onclick="removeActivate()"> ❌ Clear All </button>
+    <button class="canvButtons" , style="height:40px; width:150px" , onclick="clearAll()"> ❌ Clear All </button>
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="solveTruss()"> ▶️ Solve Truss </button>
 
     <br>
@@ -51,8 +56,26 @@
 
     <br>
     <br>
+
+    <label> <strong> Modulus of Elasticity of Members (MPa): </strong> </label>
+    <input id="modOfEText" type="text">
+
+    <br>
+    <br>
     <hr>
     <br>
+
+    <div id="errorModal" class="modal">
+        <div class="modalContent">
+            <div class="modalHeader">
+                <span class="closeModalBtn">&times;</span>
+                <h2>Error!</h2>
+            </div>
+            <div class="modalBody">
+                <p id="modalBodyText"></p>
+            </div>  
+        </div>
+    </div>
 
     <div id="loadDiv"></div>
     <table id="loadTable"> </table>
