@@ -236,6 +236,26 @@ function inJoint() {
     }
     return false;
 }
+function inJointManual() {
+    for (let joints of jointArray) {
+        if (distanceBetween(endX, endY, joints.posX, joints.posY) < joints.radius) {
+            if (lineBegin && memberJointButtonActive) {
+                currStartX = joints.posX;
+                currStartY = joints.posY;
+                clickedStartMouseInJoint = true;
+            } else if (!lineBegin && memberJointButtonActive) {
+                currEndX = joints.posX;
+                currEndY = joints.posY;
+                clickedEndMouseInJoint = true;
+            } else {
+                currX = joints.posX;
+                currY = joints.posY;
+            }
+            return true;
+        }
+    }
+    return false;
+}
 
 //Calculation Functions: Length, Angles, Distance
 function calcLength(y2, y1, x2, x1) {
@@ -360,6 +380,8 @@ function createMember() {
         lengthText.textContent = "Length: " + len + " m";
         angleText.textContent = "Angle: " + angleDisplayed + " deg";
 
+        console.log(memberArray);
+        console.log(jointArray);
         //Reset necessary variables to default
         reset();
     }
@@ -368,15 +390,21 @@ function createMember() {
 function createMemberWithKey() {
     restoreSnapShot();
     lineBegin = false;
-    if (useCurr) {
-        endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * parseFloat(canvAText.value) / 180)) / (actualSize + 10) + currStartX;
-        endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (parseFloat(canvAText.value) - 180) / 180)) / (actualSize + 10) + currStartY;
-    } else {
-        endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * parseFloat(canvAText.value) / 180)) / (actualSize + 10) + startX;
-        endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (parseFloat(canvAText.value) - 180) / 180)) / (actualSize + 10) + startY;
+
+    let posCanvAValue = parseFloat(canvAText.value);
+    while (posCanvAValue < 0) {
+        posCanvAValue += 360.0;
     }
 
-    inJoint();
+    if (useCurr) {
+        endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + currStartX;
+        endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + currStartY;
+    } else {
+        endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + startX;
+        endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + startY;
+    }
+
+    inJointManual();
 
     if (clickedStartMouseInJoint) {
         startX = currStartX;
@@ -390,7 +418,7 @@ function createMemberWithKey() {
     }
 
     //Calculate Lengths and Angles
-    len = Math.round(parseFloat(canvLText.value) * 100) / 100;
+    len = calcLength(endY, startY, endX, startX);
     angle = calcAngle(endY, startY, endX, startX);
     angleDisplayed = calcRealAngle(endY, startY, endX, startX);
 
@@ -418,6 +446,8 @@ function createMemberWithKey() {
     lengthText.textContent = "Length: " + len + " m";
     angleText.textContent = "Angle: " + angleDisplayed + " deg";
 
+    console.log(memberArray);
+    console.log(jointArray);
     //Reset necessary variables to default
     reset();
 }
@@ -493,6 +523,8 @@ function undoLast() {
         }
         typeHistory.pop();
     }
+    console.log(memberArray);
+    console.log(jointArray);
 }
 function clearAll() {
     if (lineBegin) {
@@ -514,6 +546,8 @@ function clearAll() {
     virtualText.value = "";
     yieldText.value = "";
     modOfEText.value = "";
+    console.log(memberArray);
+    console.log(jointArray);
 }
 function solveTruss() {
     if (memberArray.length + 2 * (pinArray.length) + rollerArray.length !== 2 * (jointArray.length)) {
@@ -1224,9 +1258,18 @@ canvas.addEventListener("mousemove", (event) => {
     posYText.textContent = "Y: " + mousePos.y;
 });
 
+closeModalBtn.addEventListener("click", (e) => {
+    errorModal.style.display = "none";
+});
+
+window.addEventListener("click", (e) => {
+    if (e.target == errorModal)
+        errorModal.style.display = "none";
+});
+
 document.addEventListener("keydown", (e) => {
     if (memberJointButtonActive && lineBegin) {
-        if (((e.which > 47 && e.which <= 57) || e.which == 190) && !switAngText) {
+        if (((e.which > 47 && e.which <= 57) || e.which == 189 || e.which == 190) && !switAngText) {
             canvLText.value += e.key;
         } else if ((e.which == 9 || e.which == 13) && !enterFunc) {
             e.preventDefault();
@@ -1237,7 +1280,7 @@ document.addEventListener("keydown", (e) => {
                 switAngText = true;
                 enterFunc = true;
             }
-        } else if (((e.which > 47 && e.which <= 57) || e.which == 190) && switAngText) {
+        } else if (((e.which > 47 && e.which <= 57) || e.which == 189 || e.which == 190) && switAngText) {
             canvAText.value += e.key;
         } else if ((e.which == 9 || e.which == 13) && enterFunc) {
             e.preventDefault();
@@ -1257,13 +1300,4 @@ document.addEventListener("keydown", (e) => {
             }
         }
     }
-});
-
-closeModalBtn.addEventListener("click", (e) => {
-    errorModal.style.display = "none";
-});
-
-window.addEventListener("click", (e) => {
-    if (e.target == errorModal)
-        errorModal.style.display = "none";
 });
