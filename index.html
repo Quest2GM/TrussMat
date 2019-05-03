@@ -6,26 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>TrussMat</title>
-</head>
-
-<head>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <h1> TrussMat </h1>
-    <p id="lengthText"> Length: </p>
-    <p id="angleText"> Angle: </p>
-    <p id="posX"> X: </p>
-    <p id="posY"> Y: </p>
-    <canvas id="newCanvas" width="1200" height="600"></canvas>
-    <br>
+    <p id="lengthText" class="lb" style="position:absolute; top:10px; left:20px;"> <strong> Length (m): </strong></p>
+    <p id="angleText" class="lb" style="position:absolute; top:37px; left:16px;"> <strong> Angle (deg): </strong></p>
+    <canvas id="newCanvas" width="1460" height="700"></canvas>
 
-    <input id="canvLText" type="text" style="position:absolute; height:20px; width:70px; top:270px; left:1120px;">
-    <input id="canvAText" type="text" style="position:absolute; height:20px; width:70px; top:305px; left:1120px;">
-    <label id="canvLLabel" class="canv" style="position:absolute; height:20px; width:100px; top:275px; left:1030px"> <strong> Length (m): </strong> </label>
-    <label id="canvALabel" class="canv" style="position:absolute; height:20px; width:110px; top:310px; left:1025px"> <strong> Angle (deg): </strong> </label>
+    <input id="canvLText" type="text" style="position:absolute; height:18px; width:100px; top:17px; left:110px;">
+    <input id="canvAText" type="text" style="position:absolute; height:18px; width:100px; top:45px; left:110px;">
 
+    <button class="canvButtons" , style="height:40px; width:150px" , onclick="instrucActivate()"> Instructions </button>
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="memberPinActivate()"> ⏹️ Member </button>
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="pinActivate()"> 🔺 Pin </button>
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="rollerActivate()"> 🔴 Roller </button>
@@ -34,46 +26,57 @@
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="clearAll()"> ❌ Clear All </button>
     <button class="canvButtons" , style="height:40px; width:150px" , onclick="solveTruss()"> ▶️ Solve Truss </button>
 
-    <br>
-    <br>
-    <hr>
-    <br>
+    <label class="lb" style="position:absolute; top:580px; left:20px;"> <strong> Load (kN): </strong> </label>
+    <input id="loadText" type="text" style="position:absolute; width:70px; top:580px; left:190px;">
 
-    <label> <strong> Load (kN): </strong> </label>
-    <input id="loadText" type="text">
+    <label class="lb" style="position:absolute; top:610px; left:20px;"> <strong> Virtual (kN): </strong> </label>
+    <input id="virtualText" type="text" style="position:absolute; width:70px; top:610px; left:190px;">
 
-    <br>
-    <br>
+    <label class="lb" style="position:absolute; top:640px; left:20px;"> <strong> Yield Strength (MPa): </strong> </label>
+    <input id="yieldText" type="text" style="position:absolute; width:70px; top:640px; left:190px;">
 
-    <label> <strong> Virtual @ Joint: </strong> </label>
-    <input id="virtualText" type="text">
-
-    <br>
-    <br>
-
-    <label> <strong> Yield Strength of Members (MPa): </strong> </label>
-    <input id="yieldText" type="text">
-
-    <br>
-    <br>
-
-    <label> <strong> Modulus of Elasticity of Members (MPa): </strong> </label>
-    <input id="modOfEText" type="text">
+    <label class="lb" style="position:absolute; top:670px; left:20px;"> <strong> Young's Modulus (MPa): </strong> </label>
+    <input id="modOfEText" type="text" style="position:absolute; width:70px; top:670px; left:190px;">
 
     <br>
     <br>
     <hr>
     <br>
 
-    <div id="errorModal" class="modal">
+    <div id="startUp" class="modal">
         <div class="modalContent">
             <div class="modalHeader">
                 <span class="closeModalBtn">&times;</span>
-                <h2>Error!</h2>
+                <h2>Welcome to TrussMat!</h2>
             </div>
             <div class="modalBody">
-                <p id="modalBodyText"></p>
-            </div>  
+                <p> 
+                    This is main goal of this program is to solve the forces in a truss bridge under a specfied load. It can also solve the virtual truss bridge, the best possible HSS configurations and the virtual deflection of the bridge, but these are optional.
+
+                    Here are the general instructions on how to use this program:
+                    <ul> 1. Click on the Member button under the canvas. Then, click on the canvas once to start the member, move your mouse to the desired length and angle (which are displayed on the top left of the screen) and click again to finish adding the member.  </ul>
+                    <ul> 2. You may add a pin, roller or load by clicking on the respective button and placing it directly on top of a joint. </ul>
+                    <ul> 3. You can undo your previous addition, or clear the entire canvas. If you clear the entire canvas, you can't undo it. </ul>
+                    <ul> 4. Once you have made sure to build a statically determinate bridge, (ie. when 2j = m + r), click 'Solve Truss'.</ul>
+                    <ul> 5. The results should be displayed to you at the bottom in a table.</ul>
+
+                    Good luck!
+                    
+                </p>
+                <button class="modalButton" , style="height:40px; width:150px"> Start </button>
+            </div>
+        </div>
+    </div>
+    <div id="errorModal" class="modalError">
+        <div class="modalContent">
+            <div class="modalHeader">
+                <span class="closeModalBtn">&times;</span>
+                <h2 id="modalHeaderText">Error!</h2>
+            </div>
+            <div class="modalBody">
+                <p id="modalBodyText">                    
+                </p>
+            </div>
         </div>
     </div>
 

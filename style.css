@@ -21,6 +21,16 @@ body {
     font-family: Tahoma, Geneva, sans-serif;
 }
 
+.modalButton {
+    background-color:#f48f42;
+    color: #fff;
+    border: 2px #000;
+    font-family: Tahoma, Geneva, sans-serif;
+}
+.modalButton:hover {
+    background-color:#b75a14
+}
+
 .canvButtons:hover {
     background-color: #373831;
 }
@@ -31,6 +41,18 @@ body {
 }
 
 .modal {
+    display:block;
+    position:fixed;
+    z-index: 1;
+    left:0;
+    top:0;
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modalError {
     display:none;
     position:fixed;
     z-index: 1;
@@ -73,4 +95,8 @@ body {
 
 .modalBody {
     padding:10px 20px;
+}
+
+.lb {
+    font-size:13px;
 }

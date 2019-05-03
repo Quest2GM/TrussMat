@@ -6,6 +6,7 @@
 //Canvas Variables
 let canvas = document.getElementById("newCanvas")   //The canvas which is being displayed on scree
 let context = canvas.getContext("2d");              //The type of context being used; 2D in this case
+createBorder();
 let rect = canvas.getBoundingClientRect();          //Refers to the rectangle with the 1 px black border (ie. what creates the canvas)
 let snapShot;                                       //Used to prevent multiple lines begin created during member-joint created
 
@@ -29,10 +30,6 @@ let angleDisplayed;
 let actualSize = 52;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
 
 //Paragraph Changer Variables
-let lengthText = document.getElementById("lengthText");     //Text updates to the screen regarding the current length of the member-joint
-let angleText = document.getElementById("angleText");       //Text updater to the screen regarding the curring angle of the member-joint
-let posXText = document.getElementById("posX");
-let posYText = document.getElementById("posY");
 let loadText = document.getElementById("loadText");
 let loadDiv = document.getElementById("loadDiv");
 let loadTable = document.getElementById("loadTable");
@@ -44,8 +41,12 @@ let canvAText = document.getElementById("canvAText");
 let canvLLabel = document.getElementById("canvLLabel");
 let canvALabel = document.getElementById("canvALabel");
 let errorModal = document.getElementById("errorModal");
+let startUp = document.getElementById("startUp");
 let errorModalBody = document.getElementById("modalBodyText");
+let errorModalHeader = document.getElementById("modalHeaderText");
+let modalButton = document.getElementsByClassName("modalButton")[0];
 let closeModalBtn = document.getElementsByClassName("closeModalBtn")[0];
+let closeModalBtn1 = document.getElementsByClassName("closeModalBtn")[1];
 
 //Member Property Variables
 let newMember;           //When a new member is created with its respective constructor, it is stored in this variable
@@ -61,7 +62,6 @@ let useCurr = false;
 let newJoint;                           //When a new joint is created with its repective constructor, it is stored in this variable
 let jointArray = [];                    //The newJoint variable is immediately stored in this array
 let jointArraySort = [];
-let numMember = 0;                      //Indicates which member it is attached to
 let clickedStartMouseInJoint = false;   //When beginning the member, indicates whether the start position is already within a joint
 let clickedEndMouseInJoint = false;     //When beginning the member, indicates whether the end position is already within a joint
 let startJointVisible = true;           //If the start joint is overwritten, this is false
@@ -77,179 +77,222 @@ let loadArray = [];     //newLoad is immediately stored in this array
 let currX;              //Stores the x-coordinate if the user clicks in a joint to add a support
 let currY;              //Stores the y-coordinate if the user clicks in a joint to add a support
 
-//Undo History
-let undoHistory = [];   //For the undo button functionality.
-let typeHistory = [];   //To track what was added to the canvas
-
 //Other
 let switAngText = false;
 let enterFunc = false;
+let clearTB = false;
+let useManual = false;
+
+function createBorder() {
+    context.beginPath();
+    context.moveTo(0, 540);
+    context.lineTo(300, 540);
+    context.lineWidth = 5;
+    context.strokeStyle = "#000000";
+    context.stroke();
+    context.beginPath();
+    context.moveTo(300, 537.6);
+    context.lineTo(300, 700);
+    context.lineWidth = 5;
+    context.strokeStyle = "#000000";
+    context.stroke();
+}
 
 //Constructor Function to build new members, joints, pins loads and rollers
-function Member(startX, startY, endX, endY, len, angle) {
-    this.startX = startX;
-    this.startY = startY;
-    this.endX = endX;
-    this.endY = endY;
-    this.len = len;
-    this.angle = angle;
-    this.memberLabel = "";
-    this.jointA = "";
-    this.jointB = "";
-    this.direcNumEW;
-    this.direcNumNS;
-    this.stressForce;
-    this.virtualForce;
-    this.areaHSS;
-    this.moiHSS;
-    this.rGyrHSS;
-    this.nAreaHSS;
-    this.nMoiHSS;
-    this.nRGyrHSS;
-    this.HSS;
-    this.vWork;
 
-    context.beginPath();
-    context.moveTo(this.startX, this.startY);
-    context.lineTo(this.endX, this.endY);
-    context.lineWidth = 5;
-    context.strokeStyle = "#5477ea";
-    context.stroke();
+class Member {
+    constructor(startX, startY, endX, endY, len, angle) {
+        this.startX = startX; this.startY = startY;
+        this.endX = endX; this.endY = endY;
+        this.len = len; this.angle = angle;
+        this.memberLabel = ""; this.jointA = ""; this.jointB = "";
+        this.direcNumNS; this.direcNumEW;
+        this.stressForce; this.virtualForce;
+        this.areaHSS; this.moiHSS; this.rGyrHSS;
+        this.nAreaHSS; this.nMoiHSS; this.nRGyrHSS;
+        this.HSS;
+        this.vWork;
+    }
+    buildMember() {
+        context.beginPath();
+        context.moveTo(this.startX, this.startY);
+        context.lineTo(this.endX, this.endY);
+        context.lineWidth = 5;
+        context.strokeStyle = "#5477ea";
+        context.stroke();
+    }
 }
-function Joint(posX, posY, numMember) {
-    this.posX = posX;
-    this.posY = posY;
-    this.numMember = numMember;
-    this.radius = 10;
-    this.colour = "#909696";
-    this.jointLabel = "";
-    this.hasPin = false;
-    this.hasRoller = false;
-    this.hasLoad = false;
 
-    context.beginPath();
-    context.moveTo(this.posX, this.posY);
-    context.arc(this.posX, this.posY, this.radius, 0, 2 * Math.PI);
-    context.fillStyle = this.colour;
-    context.fill();
+class Joint {
+    constructor(posX, posY) {
+        this.posX = posX; this.posY = posY;
+        this.radius = 10; this.colour = "#909696";
+        this.jointLabel = "";
+        this.hasPin = false; this.hasRoller = false; this.hasLoad = false;
+    }
+    buildJoint() {
+        context.beginPath();
+        context.moveTo(this.posX, this.posY);
+        context.arc(this.posX, this.posY, this.radius, 0, 2 * Math.PI);
+        context.fillStyle = this.colour; context.fill();
+    }
 }
-function Pin(posX, posY) {
-    this.posX = posX;
-    this.posY = posY;
-    this.pinLabelX = "";
-    this.pinLabelY = "";
 
-    context.beginPath();
-    context.moveTo(this.posX, this.posY);
-    context.lineTo(this.posX + 20, this.posY + Math.sqrt(1200));
-    context.lineTo(this.posX - 20, this.posY + Math.sqrt(1200));
-    context.fillStyle = "#ff0003";
-    context.fill();
+class Pin {
+    constructor(posX, posY) {
+        this.posX = posX; this.posY = posY;
+        this.pinLabelX = ""; this.pinLabelY = "";
+    }
+    buildPin() {
+        context.beginPath();
+        context.moveTo(this.posX, this.posY);
+        context.lineTo(this.posX + 20, this.posY + Math.sqrt(1200)); context.lineTo(this.posX - 20, this.posY + Math.sqrt(1200));
+        context.fillStyle = "#ff0003"; context.fill();
+    }
 }
-function Roller(posX, posY) {
-    this.posX = posX;
-    this.posY = posY;
-    this.rollerLabel = "";
 
-    context.beginPath();
-    context.moveTo(this.posX, this.posY);
-    context.arc(this.posX, this.posY + 18, 17, 0, 7);
-    context.fillStyle = "#ff0003";
-    context.fill();
+class Roller {
+    constructor(posX, posY) {
+        this.posX = posX; this.posY = posY;
+        this.rollerLabel = "";
+    }
+    buildRoller() {
+        context.beginPath();
+        context.moveTo(this.posX, this.posY);
+        context.arc(this.posX, this.posY + 18, 17, 0, 7);
+        context.fillStyle = "#ff0003"; context.fill();
+    }
 }
-function Load(posX, posY, mag) {
-    this.posX = posX;
-    this.posY = posY;
-    this.mag = mag;
-    this.loadLabel = "";
 
-    context.beginPath();
-    context.moveTo(this.posX, this.posY);
-    context.lineTo(this.posX, this.posY + 50);
-    context.moveTo(this.posX, this.posY + 49);
-    context.lineTo(this.posX - 10, this.posY + 39);
-    context.moveTo(this.posX, this.posY + 49);
-    context.lineTo(this.posX + 10, this.posY + 39);
-    context.fillStyle = "black";
-    context.fillRect(this.posX - 2, this.posY + 47, 4, 4);
-    context.strokeStyle = "black";
-    context.stroke();
-    context.font = "18px Cambria";
-    context.fillStyle = "black";
-    context.fillText(this.mag + " kN", this.posX - 30, this.posY + 70);
+class Load {
+    constructor(posX, posY, mag) {
+        this.posX = posX; this.posY = posY;
+        this.mag = mag;
+        this.loadLabel = "";
+    }
+    buildLoad() {
+        context.beginPath();
+        context.moveTo(this.posX, this.posY); context.lineTo(this.posX, this.posY + 50);
+        context.moveTo(this.posX, this.posY + 49); context.lineTo(this.posX - 10, this.posY + 39);
+        context.moveTo(this.posX, this.posY + 49); context.lineTo(this.posX + 10, this.posY + 39);
+        context.fillStyle = "black"; context.fillRect(this.posX - 2, this.posY + 47, 4, 4);
+        context.strokeStyle = "black"; context.stroke();
+        context.font = "18px Cambria"; context.fillStyle = "black"; context.fillText(this.mag + " kN", this.posX - 30, this.posY + 70);
+    }
 }
+
+// Class for Undo History
+class undo {
+    constructor() {
+        this.typeHistory = [];
+        this.undoHistory = [];
+    }
+    addHistory(type) {
+        this.typeHistory.push(type);
+        this.undoHistory.push(context.getImageData(0, 0, canvas.width, canvas.height));
+    }
+    retrieveHistory() {
+        context.putImageData(this.undoHistory[this.undoHistory.length - 1], 0, 0);
+        this.remUndoHistory();
+    }
+    deleteFromHistory() {
+        this.retrieveHistory();
+        if (this.typeHistory[this.typeHistory.length - 1] === "P") {
+            pinArray.pop();
+        } else if (this.typeHistory[this.typeHistory.length - 1] === "R") {
+            rollerArray.pop();
+        } else if (this.typeHistory[this.typeHistory.length - 1] === "L") {
+            loadArray.pop();
+        } else if (this.typeHistory[this.typeHistory.length - 1] === "M") {
+            memberArray.pop();
+            if (this.typeHistory[this.typeHistory.length - 2] === "J") {
+                jointArray.pop();
+                this.remTypeHistory();
+            }
+            if (this.typeHistory[this.typeHistory.length - 2] === "J") {
+                jointArray.pop();
+                this.remTypeHistory();
+            }
+        } else if (this.typeHistory[this.typeHistory.length - 1] === "S") {
+            solveTrussActive = false;
+            deleteTable();
+        }
+        this.remTypeHistory();
+    }
+    takeSnapShot() {
+        snapShot = context.getImageData(0, 0, canvas.width, canvas.height);
+    }
+    restoreSnapShot() {
+        context.putImageData(snapShot, 0, 0);
+    }
+    remUndoHistory() {
+        this.undoHistory.pop();
+    }
+    remTypeHistory() {
+        this.typeHistory.pop();
+    }
+    historyLength() {
+        return this.undoHistory.length;
+    }
+}
+
+//Undo History
+let uHistory = new undo();
+let mHistory = new undo();
 
 //Temporary Creations for a Member and Joints
 function tempMember(posX, posY) {
-    context.beginPath();
+    let unTrackedMember;
     if (clickedStartMouseInJoint) {
-        context.moveTo(currStartX, currStartY);
         len = calcLength(posY, currStartY, posX, currStartX);
         angle = calcRealAngle(posY, currStartY, posX, currStartX);
+        unTrackedMember = new Member(currStartX, currStartY, posX, posY, len, angle);
     } else {
-        context.moveTo(startX, startY);
         len = calcLength(posY, startY, posX, startX);
         angle = calcRealAngle(posY, startY, posX, startX);
+        unTrackedMember = new Member(startX, startY, posX, posY, len, angle);
     }
-    lengthText.textContent = "Length: " + len + " m";
-    angleText.textContent = "Angle: " + angle + " deg";
-    context.lineTo(posX, posY);
-    context.lineWidth = 5;
-    context.strokeStyle = "#5477ea";
-    context.stroke();
+    unTrackedMember.buildMember();
+    canvLText.value = len;
+    canvAText.value = angle;
 }
-function tempJoint(posX, posY, colour) {
-    context.beginPath();
-    context.moveTo(posX, posY);
-    context.arc(posX, posY, 10, 0, 2 * Math.PI);
-    context.fillStyle = colour;
-    context.fill();
+function tempJoint(posX, posY) {
+    let unTrackedJoint = new Joint(posX, posY);
+    unTrackedJoint.buildJoint();
 }
 
 //Returns the coordinates of the mouse
-function getMousePos(event) {
+function getMousePos(e) {
     return {
-        x: event.pageX - rect.left,
-        y: event.pageY - rect.top
+        x: e.pageX - rect.left,
+        y: e.pageY - rect.top
     };
 }
 
 //Checks if the cursor is within a joint
-function inJoint() {
-    mousePos = getMousePos(event);
-    for (let joints of jointArray) {
-        if (distanceBetween(mousePos.x, mousePos.y, joints.posX, joints.posY) < joints.radius) {
-            if (lineBegin && memberJointButtonActive) {
-                currStartX = joints.posX;
-                currStartY = joints.posY;
-                clickedStartMouseInJoint = true;
-            } else if (!lineBegin && memberJointButtonActive) {
-                currEndX = joints.posX;
-                currEndY = joints.posY;
-                clickedEndMouseInJoint = true;
-            } else {
-                currX = joints.posX;
-                currY = joints.posY;
-            }
-            return true;
-        }
+function inJoint(doManual) {
+    let rEndX, rEndY;
+    if (!doManual) {
+        mousePos = getMousePos(event);
+        rEndX = mousePos.x;
+        rEndY = mousePos.y;
+    } else {
+        rEndX = endX;
+        rEndY = endY;
     }
-    return false;
-}
-function inJointManual() {
-    for (let joints of jointArray) {
-        if (distanceBetween(endX, endY, joints.posX, joints.posY) < joints.radius) {
+    for (let i of jointArray) {
+        if (distanceBetween(rEndX, rEndY, i.posX, i.posY) < i.radius) {
             if (lineBegin && memberJointButtonActive) {
-                currStartX = joints.posX;
-                currStartY = joints.posY;
+                currStartX = i.posX;
+                currStartY = i.posY;
                 clickedStartMouseInJoint = true;
             } else if (!lineBegin && memberJointButtonActive) {
-                currEndX = joints.posX;
-                currEndY = joints.posY;
+                currEndX = i.posX;
+                currEndY = i.posY;
                 clickedEndMouseInJoint = true;
             } else {
-                currX = joints.posX;
-                currY = joints.posY;
+                currX = i.posX;
+                currY = i.posY;
             }
             return true;
         }
@@ -278,19 +321,6 @@ function distanceBetween(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
 
-//Allows you to drag members
-function takeSnapShot() {
-    snapShot = context.getImageData(0, 0, canvas.width, canvas.height);
-}
-function restoreSnapShot() {
-    context.putImageData(snapShot, 0, 0);
-}
-
-//Undo Function
-function copyLast() {
-    undoHistory.push(context.getImageData(0, 0, canvas.width, canvas.height));
-}
-
 //Checks if member has already been created at a location
 function checkCreate(X1, X2, Y1, Y2) {
     if (X1 === X2 && Y1 === Y2) {
@@ -306,7 +336,6 @@ function checkCreate(X1, X2, Y1, Y2) {
 
 //Function to Reset for Next Iteration
 function reset() {
-    numMember++;
     clickedStartMouseInJoint = false;
     clickedEndMouseInJoint = false;
     startJointVisible = true;
@@ -316,29 +345,47 @@ function reset() {
     useCurr = false;
     switAngText = false;
     enterFunc = false;
+    useManual = false;
 }
 
 //MouseDown Functions
 function createMember() {
     if (!lineBegin) {
         lineBegin = true;
-        startX = mousePos.x;
-        startY = mousePos.y;
-        copyLast();
-        if (inJoint()) {
+        startX = mousePos.x; startY = mousePos.y;
+        uHistory.addHistory("X");
+        uHistory.remTypeHistory();
+        if (inJoint(false)) {
             useCurr = true;
-            tempJoint(currStartX, currStartY, "#909696");
+            tempJoint(currStartX, currStartY);
         } else {
             useCurr = false;
-            tempJoint(startX, startY, "#909696");
+            tempJoint(startX, startY);
         }
-        takeSnapShot();
+        mHistory.takeSnapShot();
     } else if (lineBegin) {
-        restoreSnapShot();
+        mHistory.restoreSnapShot();
         lineBegin = false;
-        endX = mousePos.x;
-        endY = mousePos.y;
-        inJoint();
+
+        if (!useManual) {
+            endX = mousePos.x;
+            endY = mousePos.y;
+            inJoint(false);
+        } else {
+            let posCanvAValue = parseFloat(canvAText.value);
+            while (posCanvAValue < 0) {
+                posCanvAValue += 360.0;
+            }
+
+            if (useCurr) {
+                endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + currStartX;
+                endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + currStartY;
+            } else {
+                endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + startX;
+                endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + startY;
+            }
+            inJoint(true);
+        }
 
         if (clickedStartMouseInJoint) {
             startX = currStartX;
@@ -357,113 +404,65 @@ function createMember() {
         angleDisplayed = calcRealAngle(endY, startY, endX, startX);
 
         //Create and Store New Members and Joints
-        if (checkCreate(startX, endX, startY, endY) === true) {
+        if (checkCreate(startX, endX, startY, endY)) {
             newMember = new Member(startX, startY, endX, endY, len, angle);
+            newMember.buildMember();
             memberArray.push(newMember);
-            newJoint = new Joint(startX, startY, numMember);
-            if (startJointVisible == true) {
+            newJoint = new Joint(startX, startY);
+            newJoint.buildJoint();
+            if (startJointVisible) {
                 jointArray.push(newJoint);
-                typeHistory.push("J");
+                uHistory.addHistory("J");
+                uHistory.remUndoHistory();
             }
-            newJoint = new Joint(endX, endY, numMember);
-            if (endJointVisible == true) {
+            newJoint = new Joint(endX, endY);
+            newJoint.buildJoint();
+            if (endJointVisible) {
                 jointArray.push(newJoint);
-                typeHistory.push("J");
+                uHistory.addHistory("J");
+                uHistory.remUndoHistory();
             }
-            typeHistory.push("M");
+            uHistory.addHistory("M");
+            uHistory.remUndoHistory();
         } else {
-            context.putImageData(undoHistory[undoHistory.length - 1], 0, 0);
-            undoHistory.pop();
+            uHistory.retrieveHistory();
             angleDisplayed = 0;
         }
         //Length and Angle Updates to the Screen
-        lengthText.textContent = "Length: " + len + " m";
-        angleText.textContent = "Angle: " + angleDisplayed + " deg";
+        canvLText.value = len;
+        canvAText.value = angleDisplayed;
 
-        console.log(memberArray);
-        console.log(jointArray);
         //Reset necessary variables to default
         reset();
     }
 }
 
-function createMemberWithKey() {
-    restoreSnapShot();
-    lineBegin = false;
-
-    let posCanvAValue = parseFloat(canvAText.value);
-    while (posCanvAValue < 0) {
-        posCanvAValue += 360.0;
-    }
-
-    if (useCurr) {
-        endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + currStartX;
-        endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + currStartY;
-    } else {
-        endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + startX;
-        endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + startY;
-    }
-
-    inJointManual();
-
-    if (clickedStartMouseInJoint) {
-        startX = currStartX;
-        startY = currStartY;
-        startJointVisible = false;
-    }
-    if (clickedEndMouseInJoint) {
-        endX = currEndX;
-        endY = currEndY;
-        endJointVisible = false;
-    }
-
-    //Calculate Lengths and Angles
-    len = calcLength(endY, startY, endX, startX);
-    angle = calcAngle(endY, startY, endX, startX);
-    angleDisplayed = calcRealAngle(endY, startY, endX, startX);
-
-    //Create and Store New Members and Joints
-    if (checkCreate(startX, endX, startY, endY) === true) {
-        newMember = new Member(startX, startY, endX, endY, len, angle);
-        memberArray.push(newMember);
-        newJoint = new Joint(startX, startY, numMember);
-        if (startJointVisible == true) {
-            jointArray.push(newJoint);
-            typeHistory.push("J");
-        }
-        newJoint = new Joint(endX, endY, numMember);
-        if (endJointVisible == true) {
-            jointArray.push(newJoint);
-            typeHistory.push("J");
-        }
-        typeHistory.push("M");
-    } else {
-        context.putImageData(undoHistory[undoHistory.length - 1], 0, 0);
-        undoHistory.pop();
-        angleDisplayed = 0;
-    }
-    //Length and Angle Updates to the Screen
-    lengthText.textContent = "Length: " + len + " m";
-    angleText.textContent = "Angle: " + angleDisplayed + " deg";
-
-    console.log(memberArray);
-    console.log(jointArray);
-    //Reset necessary variables to default
-    reset();
+//Activation and Button Functions
+function instrucActivate() {
+    startUp.style.display = "block";
 }
 
-//Activation and Button Functions
 function memberPinActivate() {
     pinButtonActive = false;
     rollerButtonActive = false;
     memberJointButtonActive = true;
     loadButtonActive = false;
 }
-function pinActivate() {
+
+function errorMsg() {
     if (lineBegin) {
         errorModal.style.display = "block";
+        errorModalBody.textContent = "";
         errorModalBody.textContent = "You must first finish creating the current member!";
-    } else {
+        errorModalHeader.textContent = "Error!";
+        return true;
+    }
+    return false;
+}
+
+function pinActivate() {
+    errorMsg();
+    if (!errorMsg()) {
         pinButtonActive = true;
         rollerButtonActive = false;
         memberJointButtonActive = false;
@@ -471,10 +470,8 @@ function pinActivate() {
     }
 }
 function rollerActivate() {
-    if (lineBegin) {
-        errorModal.style.display = "block";
-        errorModalBody.textContent = "You must first finish creating the current member!";
-    } else {
+    errorMsg();
+    if (!errorMsg()) {
         pinButtonActive = false;
         rollerButtonActive = true;
         memberJointButtonActive = false;
@@ -482,98 +479,65 @@ function rollerActivate() {
     }
 }
 function loadActivate() {
-    if (lineBegin) {
-        errorModal.style.display = "block";
-        errorModalBody.textContent = "You must first finish creating the current member!";
-    } else {
+    errorMsg();
+    if (!errorMsg()) {
         pinButtonActive = false;
         rollerButtonActive = false;
         memberJointButtonActive = false;
         loadButtonActive = true;
     }
 }
+
 function undoLast() {
-    if (lineBegin) {
-        errorModal.style.display = "block";
-        errorModalBody.textContent = "You must first finish creating the current member!";
-        return;
+    errorMsg();
+    if (!errorMsg() && uHistory.historyLength() > 0) {
+        uHistory.deleteFromHistory();
     }
-    if (undoHistory.length > 0) {
-        context.putImageData(undoHistory[undoHistory.length - 1], 0, 0);
-        undoHistory.pop();
-        if (typeHistory[typeHistory.length - 1] == "P") {
-            pinArray.pop();
-        } else if (typeHistory[typeHistory.length - 1] == "R") {
-            rollerArray.pop();
-        } else if (typeHistory[typeHistory.length - 1] == "L") {
-            loadArray.pop();
-        } else if (typeHistory[typeHistory.length - 1] == "M") {
-            memberArray.pop();
-            if (typeHistory[typeHistory.length - 2] == "J") {
-                jointArray.pop();
-                typeHistory.pop();
-            }
-            if (typeHistory[typeHistory.length - 2] == "J") {
-                jointArray.pop();
-                typeHistory.pop();
-            }
-        } else if (typeHistory[typeHistory.length - 1] == "S") {
-            solveTrussActive = false;
-            deleteTable();
-        }
-        typeHistory.pop();
-    }
-    console.log(memberArray);
-    console.log(jointArray);
 }
 function clearAll() {
-    if (lineBegin) {
-        errorModal.style.display = "block";
-        errorModalBody.textContent = "You must first finish creating the current member!";
-        return;
+    errorMsg();
+    if (!errorMsg()) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        canvLText.value = "";
+        canvAText.value = "";
+        memberArray = []; jointArray = []; pinArray = []; rollerArray = []; loadArray = [];
+        deleteTable();
+        loadText.value = ""; virtualText.value = ""; yieldText.value = ""; modOfEText.value = "";
+        solveTrussActive = false;
+        createBorder();
     }
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    lengthText.textContent = "Length:";
-    angleText.textContent = "Angle:";
-    memberArray = [];
-    jointArray = [];
-    pinArray = [];
-    rollerArray = [];
-    loadArray = [];
-    deleteTable();
-    solveTrussActive = false;
-    loadText.value = "";
-    virtualText.value = "";
-    yieldText.value = "";
-    modOfEText.value = "";
-    console.log(memberArray);
-    console.log(jointArray);
 }
 function solveTruss() {
-    if (memberArray.length + 2 * (pinArray.length) + rollerArray.length !== 2 * (jointArray.length)) {
+    if ((memberArray.length + 2 * (pinArray.length) + rollerArray.length !== 2 * (jointArray.length)) || rollerArray.length > 1 || pinArray.length > 1) {
         errorModal.style.display = "block";
+        errorModalBody.textContent = "";
         errorModalBody.textContent = "Cannot be solved! This bridge is statically indeterminate!";
+        errorModalHeader.textContent = "Error!";
         return;
     }
-
-    if (loadArray.length == 0) {
+    if (loadText.value === "") {
         errorModal.style.display = "block";
+        errorModalBody.textContent = "";
+        errorModalBody.textContent = "Please specify the load in the 'Load' textbox located in the bottom left corner!";
+        errorModalHeader.textContent = "Error!";
+        return;
+    } else if (loadArray.length == 0) {
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "";
         errorModalBody.textContent = "Please add a load to the bridge!";
+        errorModalHeader.textContent = "Error!";
         return;
     }
-
     let count = 0;
     let A = [], b = [], AV = [], bV = [];
-    let sJoint = "";
-    let eJoint = "";
+    let sJoint = ""; let eJoint = "";
     let earlyS, earlyE, earlySY, earlyEY;
     let allForceLabels = [];
     let rL, pL;
     let fJX, fJY, sJX, sJY;
 
     if (solveTrussActive === false) {
-        copyLast();
-        typeHistory.push("S");
+        uHistory.addHistory("S");
     } else if (solveTrussActive === true) {
         context.putImageData(undoHistory[undoHistory.length - 1], 0, 0);
     }
@@ -880,6 +844,8 @@ function solveTruss() {
         loadTable.appendChild(row);
         c++;
     }
+    loadTable.setAttribute("border", "2");
+    loadTable.setAttribute("width", "100%");
     loadDiv.appendChild(loadTable);
 }
 
@@ -1017,12 +983,7 @@ function findBestHSS(a, m, r) {
 }
 
 function setHSS() {
-    let areaFOS = 2;
-    let moiFOS = 3;
-    let yieldF = yieldText.value;
-    let rGyrCheck = 200;
-    let E = modOfEText.value;
-    let moi = 0;
+    let areaFOS = 2, moiFOS = 3, yieldF = yieldText.value, rGyrCheck = 200, E = modOfEText.value, moi = 0;
     if (yieldText.value != "" && !isNaN(parseInt(yieldText.value)) && modOfEText.value != "" && !isNaN(parseInt(modOfEText.value))) {
         for (let i of memberArraySort) {
             i.areaHSS = (Math.abs(i.stressForce) * 1000) * areaFOS / yieldF;
@@ -1034,20 +995,14 @@ function setHSS() {
             }
             i.rGyrHSS = (i.len * 1000) / rGyrCheck;
             let config = findBestHSS(i.areaHSS, moi, i.rGyrHSS);
-            i.nAreaHSS = config[0];
-            i.nMoiHSS = config[1];
-            i.nRGyrHSS = config[2];
+            i.nAreaHSS = config[0]; i.nMoiHSS = config[1]; i.nRGyrHSS = config[2];
             i.HSS = config[3];
             i.vWork = (i.stressForce * 1000 * i.len * 1000 * i.virtualForce) / (E * i.nAreaHSS);
         }
     } else {
         for (let i of memberArraySort) {
-            i.areaHSS = "-";
-            i.moiHSS = "-";
-            i.rGyrHSS = "-";
-            i.nAreaHSS = "-";
-            i.nMoiHSS = "-";
-            i.nRGyrHSS = "-";
+            i.areaHSS = "-"; i.moiHSS = "-"; i.rGyrHSS = "-";
+            i.nAreaHSS = "-"; i.nMoiHSS = "-"; i.nRGyrHSS = "-";
             i.HSS = "-";
             i.vWork = "-";
         }
@@ -1056,60 +1011,8 @@ function setHSS() {
 }
 
 function getAlphabet(count) {
-    if (count === 0)
-        return "A";
-    else if (count === 1)
-        return "B";
-    else if (count === 2)
-        return "C";
-    else if (count === 3)
-        return "D";
-    else if (count === 4)
-        return "E";
-    else if (count === 5)
-        return "F";
-    else if (count === 6)
-        return "G";
-    else if (count === 7)
-        return "H";
-    else if (count === 8)
-        return "I";
-    else if (count === 9)
-        return "J";
-    else if (count === 10)
-        return "K";
-    else if (count === 11)
-        return "L";
-    else if (count === 12)
-        return "M";
-    else if (count === 13)
-        return "N";
-    else if (count === 14)
-        return "O";
-    else if (count === 15)
-        return "P";
-    else if (count === 16)
-        return "Q";
-    else if (count === 17)
-        return "R";
-    else if (count === 18)
-        return "S";
-    else if (count === 19)
-        return "T";
-    else if (count === 20)
-        return "U";
-    else if (count === 21)
-        return "V";
-    else if (count === 22)
-        return "W";
-    else if (count === 23)
-        return "X";
-    else if (count === 24)
-        return "Y";
-    else if (count === 25)
-        return "Z";
-    else
-        return "*";
+    let letter = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ", "AR", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "AZ", "BA", "BB", "BC", "BD", "BE", "BF"];
+    return letter[count];
 }
 
 //Gaussian Elimination Code
@@ -1142,7 +1045,6 @@ function findPivot(M, k) {
     }
     return i_max;
 }
-
 function swap_rows(M, i_max, k) {
     if (i_max != k) {
         let temp = M[i_max];
@@ -1183,64 +1085,73 @@ function solve(A, b) {
     return extractX(A);
 }
 
+//---------------------------------------------------------------------------
+
+function checkRPLExists(load) {
+    let check = 0;
+    if (!load) {
+        for (let elem of rollerArray) { //Checks if there is already a roller at the current click location
+            if (elem.posX == currX && elem.posY == currY) {
+                check = 1;
+            }
+        }
+        for (let elem of pinArray) { //Checks if there is already a pin at the current click location
+            if (elem.posX == currX && elem.posY == currY) {
+                check = 1;
+            }
+        }
+    } else {
+        for (let elem of loadArray) { //Checks if there is already a load at the current click location
+            if (elem.posX == currX && elem.posY == currY) {
+                check = 1;
+            }
+        }
+    }
+    return check;
+}
+
 //Active Run Code
 //---------------------------------------------------------------------------
 
 canvas.addEventListener("mousedown", (event) => {
     mousePos = getMousePos(event);
-    let check = 0;
     if (memberJointButtonActive) {
         createMember();
     } else if (pinButtonActive) {
-        if (inJoint()) {
-            for (let elem of rollerArray) { //Checks if there is already a roller at the current click location
-                if (elem.posX == currX && elem.posY == currY) {
-                    check = 1;
-                }
-            }
-            for (let elem of pinArray) { //Checks if there is already a pin at the current click location
-                if (elem.posX == currX && elem.posY == currY) {
-                    check = 1;
-                }
-            }
-            if (check == 0) {
-                copyLast();
-                typeHistory.push("P");
+        if (inJoint(false)) {
+            if (checkRPLExists(false) === 0) {
+                uHistory.addHistory("P");
                 newPin = new Pin(currX, currY);
+                newPin.buildPin();
                 pinArray.push(newPin);
             }
         }
     } else if (rollerButtonActive) {
-        if (inJoint()) {
-            for (let elem of rollerArray) { //Checks if there is already a roller at the current click location
-                if (elem.posX == currX && elem.posY == currY) {
-                    check = 1;
-                }
-            }
-            for (let elem of pinArray) { //Checks if there is already a pin at the current click location
-                if (elem.posX == currX && elem.posY == currY) {
-                    check = 1;
-                }
-            }
-            if (check == 0) {
-                copyLast();
-                typeHistory.push("R");
+        if (inJoint(false)) {
+            if (checkRPLExists(false) === 0) {
+                uHistory.addHistory("R");
                 newRoller = new Roller(currX, currY);
+                newRoller.buildRoller();
                 rollerArray.push(newRoller);
             }
         }
     } else if (loadButtonActive) {
-        if (inJoint()) {
-            for (let elem of loadArray) { //Checks if there is already a load at the current click location
-                if (elem.posX == currX && elem.posY == currY) {
-                    check = 1;
-                }
-            }
-            if (check == 0) {
-                if (loadText.value != "" && !isNaN(parseInt(loadText.value))) {
-                    copyLast();
-                    typeHistory.push("L");
+        if (inJoint(false)) {
+            if (checkRPLExists(true) === 0) {
+                if (loadText.value === "") {
+                    errorModal.style.display = "block";
+                    errorModalBody.textContent = "";
+                    errorModalBody.textContent = "Please specify the load in the 'Load' textbox located in the bottom left corner!";
+                    errorModalHeader.textContent = "Error!";
+                } else if (isNaN(parseInt(loadText.value))) {
+                    errorModal.style.display = "block";
+                    errorModalBody.textContent = "";
+                    errorModalBody.textContent = "The load you have specified in the 'Load' textbox is not a valid entry! Enter a number in kilonewtons!";
+                    errorModalHeader.textContent = "Error!";
+                } else {
+                    uHistory.addHistory("L");
                     newLoad = new Load(currX, currY, parseInt(loadText.value));
+                    newLoad.buildLoad();
                     loadArray.push(newLoad);
                 }
             }
@@ -1250,32 +1161,47 @@ canvas.addEventListener("mousedown", (event) => {
 
 canvas.addEventListener("mousemove", (event) => {
     mousePos = getMousePos(event);
+    clearTB = false;
+    useCurr = false;
+    switAngText = false;
+    enterFunc = false;
     if (memberJointButtonActive && lineBegin) {
-        restoreSnapShot();
+        mHistory.restoreSnapShot();
         tempMember(mousePos.x, mousePos.y);
     }
-    posXText.textContent = "X: " + mousePos.x;
-    posYText.textContent = "Y: " + mousePos.y;
 });
 
 closeModalBtn.addEventListener("click", (e) => {
+    startUp.style.display = "none";
+});
+closeModalBtn1.addEventListener("click", (e) => {
     errorModal.style.display = "none";
 });
 
 window.addEventListener("click", (e) => {
-    if (e.target == errorModal)
+    if (e.target === errorModal || e.target === startUp)
         errorModal.style.display = "none";
+});
+modalButton.addEventListener("click", (e) => {
+    startUp.style.display = "none";
 });
 
 document.addEventListener("keydown", (e) => {
     if (memberJointButtonActive && lineBegin) {
         if (((e.which > 47 && e.which <= 57) || e.which == 189 || e.which == 190) && !switAngText) {
+            if (!clearTB) {
+                clearTB = true;
+                canvLText.value = "";
+                canvAText.value = "";
+            }
             canvLText.value += e.key;
         } else if ((e.which == 9 || e.which == 13) && !enterFunc) {
             e.preventDefault();
             if (canvLText.value == "") {
                 errorModal.style.display = "block";
+                errorModalBody.textContent = "";
                 errorModalBody.textContent = "Please enter a valid length!";
+                errorModalHeader.textContent = "Error!";
             } else {
                 switAngText = true;
                 enterFunc = true;
@@ -1286,9 +1212,12 @@ document.addEventListener("keydown", (e) => {
             e.preventDefault();
             if (canvAText.value == "") {
                 errorModal.style.display = "block";
+                errorModalBody.textContent = "";
                 errorModalBody.textContent = "Please enter a valid angle between 0 and 360 degrees!";
+                errorModalHeader.textContent = "Error!";
             } else {
-                createMemberWithKey();
+                useManual = true;
+                createMember();
                 switAngText = false;
                 enterFunc = false;
             }
@@ -1301,3 +1230,5 @@ document.addEventListener("keydown", (e) => {
         }
     }
 });
+
+//---------------------------------------------------------------------------
