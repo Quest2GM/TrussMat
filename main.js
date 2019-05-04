@@ -13,6 +13,7 @@ let snapShot;                                       //Used to prevent multiple l
 //Type Activation Variables
 let memberJointButtonActive = false;  //True if the user has clicked the member pin button
 let pinButtonActive = false;          //True if the user has clicked the pin button
+let selectButtonActive = false;
 let rollerButtonActive = false;       //True if the user has clicked the roller button
 let loadButtonActive = false;       //True if the user has clicked the remove button
 let solveTrussActive = false;
@@ -77,6 +78,9 @@ let loadArray = [];     //newLoad is immediately stored in this array
 let currX;              //Stores the x-coordinate if the user clicks in a joint to add a support
 let currY;              //Stores the y-coordinate if the user clicks in a joint to add a support
 
+// Object Clicking
+let memberClick = false;
+
 //Other
 let switAngText = false;
 let enterFunc = false;
@@ -101,7 +105,7 @@ function createBorder() {
 //Constructor Function to build new members, joints, pins loads and rollers
 
 class Member {
-    constructor(startX, startY, endX, endY, len, angle) {
+    constructor(startX, startY, endX, endY, len, angle, colour) {
         this.startX = startX; this.startY = startY;
         this.endX = endX; this.endY = endY;
         this.len = len; this.angle = angle;
@@ -112,13 +116,14 @@ class Member {
         this.nAreaHSS; this.nMoiHSS; this.nRGyrHSS;
         this.HSS;
         this.vWork;
+        this.colour = colour;
     }
     buildMember() {
         context.beginPath();
         context.moveTo(this.startX, this.startY);
         context.lineTo(this.endX, this.endY);
         context.lineWidth = 5;
-        context.strokeStyle = "#5477ea";
+        context.strokeStyle = this.colour;
         context.stroke();
     }
 }
@@ -246,11 +251,11 @@ function tempMember(posX, posY) {
     if (clickedStartMouseInJoint) {
         len = calcLength(posY, currStartY, posX, currStartX);
         angle = calcRealAngle(posY, currStartY, posX, currStartX);
-        unTrackedMember = new Member(currStartX, currStartY, posX, posY, len, angle);
+        unTrackedMember = new Member(currStartX, currStartY, posX, posY, len, angle, "#5477ea");
     } else {
         len = calcLength(posY, startY, posX, startX);
         angle = calcRealAngle(posY, startY, posX, startX);
-        unTrackedMember = new Member(startX, startY, posX, posY, len, angle);
+        unTrackedMember = new Member(startX, startY, posX, posY, len, angle, "#5477ea");
     }
     unTrackedMember.buildMember();
     canvLText.value = len;
@@ -405,7 +410,7 @@ function createMember() {
 
         //Create and Store New Members and Joints
         if (checkCreate(startX, endX, startY, endY)) {
-            newMember = new Member(startX, startY, endX, endY, len, angle);
+            newMember = new Member(startX, startY, endX, endY, len, angle, "#5477ea");
             newMember.buildMember();
             memberArray.push(newMember);
             newJoint = new Joint(startX, startY);
@@ -442,11 +447,13 @@ function instrucActivate() {
     startUp.style.display = "block";
 }
 
+
 function memberPinActivate() {
     pinButtonActive = false;
     rollerButtonActive = false;
     memberJointButtonActive = true;
     loadButtonActive = false;
+    selectButtonActive = false;
 }
 
 function errorMsg() {
@@ -460,6 +467,17 @@ function errorMsg() {
     return false;
 }
 
+function selectActivate() {
+    errorMsg();
+    if (!errorMsg()) {
+        pinButtonActive = false;
+        rollerButtonActive = false;
+        memberJointButtonActive = false;
+        loadButtonActive = false;
+        selectButtonActive = true;
+    }
+}
+
 function pinActivate() {
     errorMsg();
     if (!errorMsg()) {
@@ -467,6 +485,7 @@ function pinActivate() {
         rollerButtonActive = false;
         memberJointButtonActive = false;
         loadButtonActive = false;
+        selectButtonActive = false;
     }
 }
 function rollerActivate() {
@@ -476,6 +495,7 @@ function rollerActivate() {
         rollerButtonActive = true;
         memberJointButtonActive = false;
         loadButtonActive = false;
+        selectButtonActive = false;
     }
 }
 function loadActivate() {
@@ -485,6 +505,7 @@ function loadActivate() {
         rollerButtonActive = false;
         memberJointButtonActive = false;
         loadButtonActive = true;
+        selectButtonActive = false;
     }
 }
 
@@ -539,7 +560,7 @@ function solveTruss() {
     if (solveTrussActive === false) {
         uHistory.addHistory("S");
     } else if (solveTrussActive === true) {
-        context.putImageData(undoHistory[undoHistory.length - 1], 0, 0);
+        uHistory.retrieveHistory();
     }
     solveTrussActive = true;
 
@@ -1085,6 +1106,74 @@ function solve(A, b) {
     return extractX(A);
 }
 
+// Delete Functions
+//---------------------------------------------------------------------------
+
+function lerp(a, b, x) {
+    return (a + x * (b - a));
+}
+
+function checkClose(eY, sY, eX, sX, mY, mX) {
+    let num1 = Math.sqrt(Math.pow(sX - mX, 2) + Math.pow(sY - mY, 2));
+    let num2 = Math.sqrt(Math.pow(eX - mX, 2) + Math.pow(eY - mY, 2));
+    let num3 = Math.sqrt(Math.pow(eX - sX, 2) + Math.pow(eY - sY, 2));
+
+    if (num1 + num2 < num3 + 2 && num1 + num2 > num3 - 2)
+        return true;
+    return false;
+}
+
+function remElements() {
+    let cStartX = -1, cStartY = -1, cEndX = -1, cEndY = -1;
+    mousePos = getMousePos(event);
+    for (let i of memberArray) {
+        if (checkClose(parseInt(i.endY), parseInt(i.startY), parseInt(i.endX), parseInt(i.startX), parseInt(mousePos.y), parseInt(mousePos.x)) == true) {
+            cStartX = i.startX;
+            cStartY = i.startY;
+            cEndX = i.endX;
+            cEndY = i.endY;
+            break;
+        }
+    }
+    if (cStartX !== -1 || cStartY !== -1 || cEndX !== -1 || cEndY !== -1) {
+        canvas.style.cursor = "pointer";
+        memberClick = true;
+        return [cStartX, cStartY, cEndX, cEndY];
+    } else {
+        canvas.style.cursor = "";
+        memberClick = false;
+        return [];
+    }
+}
+function reDrawCanvas(cStartX, cStartY, cEndX, cEndY) {
+    let newMember, newJoint, newPin, newRoller, newLoad;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i of memberArray) {
+        if (cStartX == i.startX && cStartY == i.startY && cEndX == i.endX && cEndY == i.endY)
+            newMember = new Member(i.startX, i.startY, i.endX, i.endY, i.len, i.angle, "#db345e");
+        else
+            newMember = new Member(i.startX, i.startY, i.endX, i.endY, i.len, i.angle, "#5477ea");
+        newMember.buildMember();
+        newJoint = new Joint(i.startX, i.startY);
+        newJoint.buildJoint();
+        newJoint = new Joint(i.endX, i.endY);
+        newJoint.buildJoint();
+    }
+    for (let i of pinArray) {
+        newPin = new Pin(i.posX, i.posY);
+        newPin.buildPin();
+    }
+    for (let i of rollerArray) {
+        newRoller = new Roller(i.posX, i.posY);
+        newRoller.buildRoller();
+    }
+    for (let i of loadArray) {
+        newLoad = new Load(i.posX, i.posY);
+        newLoad.buildLoad();
+    }
+}
+
+
 //---------------------------------------------------------------------------
 
 function checkRPLExists(load) {
@@ -1156,10 +1245,17 @@ canvas.addEventListener("mousedown", (event) => {
                 }
             }
         }
+    } else if (selectButtonActive && memberClick) {
+        let pos = remElements();
+        reDrawCanvas(pos[0], pos[1], pos[2], pos[3]);
+        createBorder();
     }
 });
 
 canvas.addEventListener("mousemove", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
     mousePos = getMousePos(event);
     clearTB = false;
     useCurr = false;
@@ -1169,6 +1265,8 @@ canvas.addEventListener("mousemove", (event) => {
         mHistory.restoreSnapShot();
         tempMember(mousePos.x, mousePos.y);
     }
+    if (!lineBegin)
+        remElements();
 });
 
 closeModalBtn.addEventListener("click", (e) => {
@@ -1187,6 +1285,7 @@ modalButton.addEventListener("click", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
+    e.preventDefault();
     if (memberJointButtonActive && lineBegin) {
         if (((e.which > 47 && e.which <= 57) || e.which == 189 || e.which == 190) && !switAngText) {
             if (!clearTB) {
@@ -1196,7 +1295,6 @@ document.addEventListener("keydown", (e) => {
             }
             canvLText.value += e.key;
         } else if ((e.which == 9 || e.which == 13) && !enterFunc) {
-            e.preventDefault();
             if (canvLText.value == "") {
                 errorModal.style.display = "block";
                 errorModalBody.textContent = "";
@@ -1209,7 +1307,6 @@ document.addEventListener("keydown", (e) => {
         } else if (((e.which > 47 && e.which <= 57) || e.which == 189 || e.which == 190) && switAngText) {
             canvAText.value += e.key;
         } else if ((e.which == 9 || e.which == 13) && enterFunc) {
-            e.preventDefault();
             if (canvAText.value == "") {
                 errorModal.style.display = "block";
                 errorModalBody.textContent = "";

@@ -42,11 +42,13 @@ body {
 
 .modal {
     display:block;
-    position:fixed;
+    position: absolute;
     z-index: 1;
     left:0;
     top:0;
-    height: 100%;
+    margin-left: 0px;
+    margin-top: -200px;
+    height: 200%;
     width: 100%;
     overflow: auto;
     background-color: rgba(0,0,0,0.5);
