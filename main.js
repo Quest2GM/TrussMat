@@ -28,7 +28,7 @@ let mousePos;              //Gets the x and y coordinate of the user's cursor at
 let len;                    //The length of the joint that is created in metres
 let angle;                 //The acute angle to the horizontal of the joint-member in degrees
 let angleDisplayed;
-let actualSize = 52;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
+let actualSize;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
 
 //Paragraph Changer Variables
 let loadText = document.getElementById("loadText");
@@ -42,12 +42,12 @@ let canvAText = document.getElementById("canvAText");
 let canvLLabel = document.getElementById("canvLLabel");
 let canvALabel = document.getElementById("canvALabel");
 let errorModal = document.getElementById("errorModal");
+let spanText = document.getElementById("spanText");
 let startUp = document.getElementById("startUp");
 let errorModalBody = document.getElementById("modalBodyText");
 let errorModalHeader = document.getElementById("modalHeaderText");
 let modalButton = document.getElementsByClassName("modalButton")[0];
 let closeModalBtn = document.getElementsByClassName("closeModalBtn")[0];
-let closeModalBtn1 = document.getElementsByClassName("closeModalBtn")[1];
 
 //Member Property Variables
 let newMember;           //When a new member is created with its respective constructor, it is stored in this variable
@@ -80,12 +80,14 @@ let currY;              //Stores the y-coordinate if the user clicks in a joint 
 
 // Object Clicking
 let memberClick = false;
+let currMemberClick;
 
 //Other
 let switAngText = false;
 let enterFunc = false;
 let clearTB = false;
 let useManual = false;
+let modalButtonClickedOnce = false;
 
 function createBorder() {
     context.beginPath();
@@ -445,6 +447,13 @@ function createMember() {
 //Activation and Button Functions
 function instrucActivate() {
     startUp.style.display = "block";
+    reDrawCanvas(-1, -1, -1, -1, false);
+    createBorder();
+    if (modalButtonClickedOnce) {
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "If you change the span length, all existing data will be deleted!";
+        errorModalHeader.textContent = "Warning!";
+    }
 }
 
 
@@ -454,12 +463,13 @@ function memberPinActivate() {
     memberJointButtonActive = true;
     loadButtonActive = false;
     selectButtonActive = false;
+    reDrawCanvas(-1, -1, -1, -1, false);
+    createBorder();
 }
 
 function errorMsg() {
     if (lineBegin) {
         errorModal.style.display = "block";
-        errorModalBody.textContent = "";
         errorModalBody.textContent = "You must first finish creating the current member!";
         errorModalHeader.textContent = "Error!";
         return true;
@@ -486,6 +496,8 @@ function pinActivate() {
         memberJointButtonActive = false;
         loadButtonActive = false;
         selectButtonActive = false;
+        reDrawCanvas(-1, -1, -1, -1, false);
+        createBorder();
     }
 }
 function rollerActivate() {
@@ -496,6 +508,8 @@ function rollerActivate() {
         memberJointButtonActive = false;
         loadButtonActive = false;
         selectButtonActive = false;
+        reDrawCanvas(-1, -1, -1, -1, false);
+        createBorder();
     }
 }
 function loadActivate() {
@@ -506,6 +520,8 @@ function loadActivate() {
         memberJointButtonActive = false;
         loadButtonActive = true;
         selectButtonActive = false;
+        reDrawCanvas(-1, -1, -1, -1, false);
+        createBorder();
     }
 }
 
@@ -531,20 +547,17 @@ function clearAll() {
 function solveTruss() {
     if ((memberArray.length + 2 * (pinArray.length) + rollerArray.length !== 2 * (jointArray.length)) || rollerArray.length > 1 || pinArray.length > 1) {
         errorModal.style.display = "block";
-        errorModalBody.textContent = "";
         errorModalBody.textContent = "Cannot be solved! This bridge is statically indeterminate!";
         errorModalHeader.textContent = "Error!";
         return;
     }
     if (loadText.value === "") {
         errorModal.style.display = "block";
-        errorModalBody.textContent = "";
         errorModalBody.textContent = "Please specify the load in the 'Load' textbox located in the bottom left corner!";
         errorModalHeader.textContent = "Error!";
         return;
     } else if (loadArray.length == 0) {
         errorModal.style.display = "block";
-        errorModalBody.textContent = "";
         errorModalBody.textContent = "Please add a load to the bridge!";
         errorModalHeader.textContent = "Error!";
         return;
@@ -556,6 +569,8 @@ function solveTruss() {
     let allForceLabels = [];
     let rL, pL;
     let fJX, fJY, sJX, sJY;
+    reDrawCanvas(-1, -1, -1, -1, false);
+    createBorder();
 
     if (solveTrussActive === false) {
         uHistory.addHistory("S");
@@ -1124,32 +1139,31 @@ function checkClose(eY, sY, eX, sX, mY, mX) {
 }
 
 function remElements() {
-    let cStartX = -1, cStartY = -1, cEndX = -1, cEndY = -1;
+    let cStartX = -1, cStartY = -1, cEndX = -1, cEndY = -1, c = 0;
     mousePos = getMousePos(event);
     for (let i of memberArray) {
-        if (checkClose(parseInt(i.endY), parseInt(i.startY), parseInt(i.endX), parseInt(i.startX), parseInt(mousePos.y), parseInt(mousePos.x)) == true) {
+        if (checkClose(parseInt(i.endY), parseInt(i.startY), parseInt(i.endX), parseInt(i.startX), parseInt(mousePos.y), parseInt(mousePos.x))) {
             cStartX = i.startX;
             cStartY = i.startY;
             cEndX = i.endX;
             cEndY = i.endY;
             break;
         }
+        c++;
     }
     if (cStartX !== -1 || cStartY !== -1 || cEndX !== -1 || cEndY !== -1) {
         canvas.style.cursor = "pointer";
-        memberClick = true;
-        return [cStartX, cStartY, cEndX, cEndY];
+        return [cStartX, cStartY, cEndX, cEndY, c];
     } else {
         canvas.style.cursor = "";
-        memberClick = false;
-        return [];
+        return [-1, -1, -1, -1, 0];
     }
 }
-function reDrawCanvas(cStartX, cStartY, cEndX, cEndY) {
+function reDrawCanvas(cStartX, cStartY, cEndX, cEndY, col) {
     let newMember, newJoint, newPin, newRoller, newLoad;
     context.clearRect(0, 0, canvas.width, canvas.height);
     for (let i of memberArray) {
-        if (cStartX == i.startX && cStartY == i.startY && cEndX == i.endX && cEndY == i.endY)
+        if (cStartX == i.startX && cStartY == i.startY && cEndX == i.endX && cEndY == i.endY && col == true)
             newMember = new Member(i.startX, i.startY, i.endX, i.endY, i.len, i.angle, "#db345e");
         else
             newMember = new Member(i.startX, i.startY, i.endX, i.endY, i.len, i.angle, "#5477ea");
@@ -1168,7 +1182,7 @@ function reDrawCanvas(cStartX, cStartY, cEndX, cEndY) {
         newRoller.buildRoller();
     }
     for (let i of loadArray) {
-        newLoad = new Load(i.posX, i.posY);
+        newLoad = new Load(i.posX, i.posY, i.mag);
         newLoad.buildLoad();
     }
 }
@@ -1229,25 +1243,30 @@ canvas.addEventListener("mousedown", (event) => {
             if (checkRPLExists(true) === 0) {
                 if (loadText.value === "") {
                     errorModal.style.display = "block";
-                    errorModalBody.textContent = "";
                     errorModalBody.textContent = "Please specify the load in the 'Load' textbox located in the bottom left corner!";
                     errorModalHeader.textContent = "Error!";
                 } else if (isNaN(parseInt(loadText.value))) {
                     errorModal.style.display = "block";
-                    errorModalBody.textContent = "";
                     errorModalBody.textContent = "The load you have specified in the 'Load' textbox is not a valid entry! Enter a number in kilonewtons!";
                     errorModalHeader.textContent = "Error!";
                 } else {
                     uHistory.addHistory("L");
-                    newLoad = new Load(currX, currY, parseInt(loadText.value));
+                    newLoad = new Load(currX, currY, Math.round(parseFloat(loadText.value) * 100) / 100);
                     newLoad.buildLoad();
                     loadArray.push(newLoad);
                 }
             }
         }
-    } else if (selectButtonActive && memberClick) {
+    } else if (selectButtonActive) {
         let pos = remElements();
-        reDrawCanvas(pos[0], pos[1], pos[2], pos[3]);
+        if (pos[4] == currMemberClick && memberClick) {
+            reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false);
+            memberClick = false;
+        } else {
+            reDrawCanvas(pos[0], pos[1], pos[2], pos[3], true);
+            memberClick = true;
+        }
+        currMemberClick = pos[4];
         createBorder();
     }
 });
@@ -1265,28 +1284,41 @@ canvas.addEventListener("mousemove", (event) => {
         mHistory.restoreSnapShot();
         tempMember(mousePos.x, mousePos.y);
     }
-    if (!lineBegin)
+    if (selectButtonActive)
         remElements();
 });
 
 closeModalBtn.addEventListener("click", (e) => {
-    startUp.style.display = "none";
-});
-closeModalBtn1.addEventListener("click", (e) => {
     errorModal.style.display = "none";
 });
 
 window.addEventListener("click", (e) => {
-    if (e.target === errorModal || e.target === startUp)
+    if (e.target === errorModal)
         errorModal.style.display = "none";
 });
 modalButton.addEventListener("click", (e) => {
-    startUp.style.display = "none";
+    if (spanText.value === "" || isNaN(parseInt(spanText.value)) || parseFloat(spanText.value) <= 0) {
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "Please enter a valid span before proceeding!";
+        errorModalHeader.textContent = "Error!";
+    } else if (modalButtonClickedOnce) {
+        if (parseFloat(spanText.value) !== actualSize) {
+            startUp.style.display = "none";
+            actualSize = parseFloat(spanText.value);
+            clearAll();
+        } else {
+            startUp.style.display = "none";
+        }
+    } else {
+        startUp.style.display = "none";
+        actualSize = parseFloat(spanText.value);
+        modalButtonClickedOnce = true;
+    }
 });
 
 document.addEventListener("keydown", (e) => {
-    e.preventDefault();
     if (memberJointButtonActive && lineBegin) {
+        e.preventDefault();
         if (((e.which > 47 && e.which <= 57) || e.which == 189 || e.which == 190) && !switAngText) {
             if (!clearTB) {
                 clearTB = true;
@@ -1295,9 +1327,8 @@ document.addEventListener("keydown", (e) => {
             }
             canvLText.value += e.key;
         } else if ((e.which == 9 || e.which == 13) && !enterFunc) {
-            if (canvLText.value == "") {
+            if (canvLText.value == "" || canvLText.value == "-") {
                 errorModal.style.display = "block";
-                errorModalBody.textContent = "";
                 errorModalBody.textContent = "Please enter a valid length!";
                 errorModalHeader.textContent = "Error!";
             } else {
@@ -1307,9 +1338,8 @@ document.addEventListener("keydown", (e) => {
         } else if (((e.which > 47 && e.which <= 57) || e.which == 189 || e.which == 190) && switAngText) {
             canvAText.value += e.key;
         } else if ((e.which == 9 || e.which == 13) && enterFunc) {
-            if (canvAText.value == "") {
+            if (canvAText.value == "" || canvAText.value == "-") {
                 errorModal.style.display = "block";
-                errorModalBody.textContent = "";
                 errorModalBody.textContent = "Please enter a valid angle between 0 and 360 degrees!";
                 errorModalHeader.textContent = "Error!";
             } else {
@@ -1324,6 +1354,20 @@ document.addEventListener("keydown", (e) => {
             } else {
                 canvAText.value = canvAText.value.substring(0, canvAText.value.length - 1);
             }
+        }
+    } else if (selectButtonActive) {
+        if (e.which === 46 && memberClick) { // Delete key
+            e.preventDefault();
+            reDrawCanvas(-1, -1, -1, -1, false);
+            createBorder();
+            uHistory.addHistory("D");
+            memberArray.splice(currMemberClick, 1);
+            jointArray.splice(currMemberClick * 2, 2);
+            reDrawCanvas(-1, -1, -1, -1, false);
+            createBorder();
+            canvas.style.cursor = "";
+            if (solveTrussActive)
+                deleteTable();
         }
     }
 });

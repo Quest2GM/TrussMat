@@ -47,7 +47,6 @@
     <div id="startUp" class="modal">
         <div class="modalContent">
             <div class="modalHeader">
-                <span class="closeModalBtn">&times;</span>
                 <h2>Welcome to TrussMat!</h2>
             </div>
             <div class="modalBody">
@@ -55,15 +54,20 @@
                     This is main goal of this program is to solve the forces in a truss bridge under a specfied load. It can also solve the virtual truss bridge, the best possible HSS configurations and the virtual deflection of the bridge, but these are optional.
 
                     Here are the general instructions on how to use this program:
-                    <ul> 1. Click on the Member button under the canvas. Then, click on the canvas once to start the member, move your mouse to the desired length and angle (which are displayed on the top left of the screen) and click again to finish adding the member.  </ul>
-                    <ul> 2. You may add a pin, roller or load by clicking on the respective button and placing it directly on top of a joint. </ul>
-                    <ul> 3. You can undo your previous addition, or clear the entire canvas. If you clear the entire canvas, you can't undo it. </ul>
-                    <ul> 4. Once you have made sure to build a statically determinate bridge, (ie. when 2j = m + r), click 'Solve Truss'.</ul>
-                    <ul> 5. The results should be displayed to you at the bottom in a table.</ul>
+                    <ul> 1. Enter the span (horizontal length) of your bridge in metres in the input box below. </ul>
+                    <ul> 2. Click on the Member button under the canvas. Then, click on the canvas once to start the member, move your mouse to the desired length and angle (which are displayed on the top left of the screen) and click again to finish adding the member.  </ul>
+                    <ul> 3. You may add a pin, roller or load by clicking on the respective button and placing it directly on top of a joint. </ul>
+                    <ul> 4. You can undo your previous addition, or clear the entire canvas. If you clear the entire canvas, you can't undo it. </ul>
+                    <ul> 5. Once you have made sure to build a statically determinate bridge, (ie. when 2j = m + r), click 'Solve Truss'.</ul>
+                    <ul> 6. The results should be displayed to you at the bottom in a table.</ul>
 
                     Good luck!
                     
                 </p>
+                <label> Enter the span of your bridge in metres: </label>
+                <input id="spanText" style="height:20px; width:70px">
+                <br>
+                <br>
                 <button class="modalButton" , style="height:40px; width:150px"> Start </button>
             </div>
         </div>
