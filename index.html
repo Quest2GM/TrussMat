@@ -17,31 +17,31 @@
     <input id="canvLText" type="text" style="position:absolute; height:18px; width:100px; top:17px; left:110px;">
     <input id="canvAText" type="text" style="position:absolute; height:18px; width:100px; top:45px; left:110px;">
 
-    <button class="canvButtons" , style="height:40px; width:150px" , onclick="instrucActivate()"> Instructions </button>
-    <button class="canvButtons" , style="height:40px; width:150px" , onclick="selectActivate()"> 🖲️ Select </button>
-    <button class="canvButtons" , style="height:40px; width:150px" , onclick="memberPinActivate()"> ⏹️ Member </button>
-    <button class="canvButtons" , style="height:40px; width:150px" , onclick="pinActivate()"> 🔺 Pin </button>
-    <button class="canvButtons" , style="height:40px; width:150px" , onclick="rollerActivate()"> 🔴 Roller </button>
-    <button class="canvButtons" , style="height:40px; width:150px" , onclick="loadActivate()"> ⬇️ Load </button>
-    <button class="canvButtons" , style="height:40px; width:150px" , onclick="undoLast()"> ↩️ Undo </button>
-    <button class="canvButtons" , style="height:40px; width:150px" , onclick="clearAll()"> ❌ Clear All </button>
-    <button class="canvButtons" , style="height:40px; width:150px" , onclick="solveTruss()"> ▶️ Solve Truss </button>
+    <button class="canvButtons" , style="position:absolute; height:50px; width:50px; top:20px; left:250px; font-size:20px;" , onclick="instrucActivate()" onmouseover="fInstrucHov(true)" onmouseout="fInstrucHov(false)">📝</button>
+    <p id="instrucLb" style="position:absolute; top:75px; left:230px; color:transparent"> Instructions </p>
+    <button class="canvButtons" , style="position:absolute; height:50px; width:50px; top:20px; left:300px; font-size:20px;" , onclick="selectActivate()" onmouseover="fSelectHov(true)" onmouseout="fSelectHov(false)"> 🖲️ </button>
+    <p id="selectLb" style="position:absolute; top:75px; left:300px; color:transparent"> Select </p>
+    <button class="canvButtons" , style="position:absolute; height:50px; width:50px; top:20px; left:350px; font-size:20px;" , onclick="memberPinActivate()" onmouseover="fMemberHov(true)" onmouseout="fMemberHov(false)"> ⏹️ </button>
+    <p id="memberLb" style="position:absolute; top:75px; left:330px; color:transparent"> Member/Joint </p>
+    <button class="canvButtons" , style="position:absolute; height:50px; width:50px; top:20px; left:400px; font-size:20px;" , onclick="pinActivate()" onmouseover="fPinHov(true)" onmouseout="fPinHov(false)"> 🔺 </button>
+    <p id="pinLb" style="position:absolute; top:75px; left:415px; color:transparent"> Pin </p>
+    <button class="canvButtons" , style="position:absolute; height:50px; width:50px; top:20px; left:450px; font-size:20px;" , onclick="rollerActivate()" onmouseover="fRollerHov(true)" onmouseout="fRollerHov(false)"> 🔴 </button>
+    <p id="rollerLb" style="position:absolute; top:75px; left:450px; color:transparent"> Roller </p>
+    <button class="canvButtons" , style="position:absolute; height:50px; width:50px; top:20px; left:500px; font-size:20px;" , onclick="loadActivate()" onmouseover="fLoadHov(true)" onmouseout="fLoadHov(false)"> ⬇️ </button>
+    <p id="loadLb" style="position:absolute; top:75px; left:510px; color:transparent"> Load </p>
+    <button class="canvButtons" , style="position:absolute; height:50px; width:50px; top:20px; left:550px; font-size:20px;" , onclick="undoLast()" onmouseover="fUndoHov(true)" onmouseout="fUndoHov(false)"> ↩️ </button>
+    <p id="undoLb" style="position:absolute; top:75px; left:555px; color:transparent"> Undo </p>
+    <button class="canvButtons" , style="position:absolute; height:50px; width:50px; top:20px; left:600px; font-size:20px;" , onclick="clearAll()" onmouseover="fClearHov(true)" onmouseout="fClearHov(false)"> ❌ </button>
+    <p id="clearLb" style="position:absolute; top:75px; left:605px; color:transparent"> Clear </p>
+    <button class="canvButtons" , style="position:absolute; height:50px; width:50px; top:20px; left:650px; font-size:20px;" , onclick="solveTruss()" onmouseover="fSolveHov(true)" onmouseout="fSolveHov(false)"> ▶️ </button>
+    <p id="solveLb" style="position:absolute; top:75px; left:630px; color:transparent"> Solve Truss </p>
 
-    <label class="lb" style="position:absolute; top:580px; left:20px;"> <strong> Load (kN): </strong> </label>
-    <input id="loadText" type="text" style="position:absolute; width:70px; top:580px; left:190px;">
-
-    <label class="lb" style="position:absolute; top:610px; left:20px;"> <strong> Virtual (kN): </strong> </label>
-    <input id="virtualText" type="text" style="position:absolute; width:70px; top:610px; left:190px;">
-
-    <label class="lb" style="position:absolute; top:640px; left:20px;"> <strong> Yield Strength (MPa): </strong> </label>
-    <input id="yieldText" type="text" style="position:absolute; width:70px; top:640px; left:190px;">
-
-    <label class="lb" style="position:absolute; top:670px; left:20px;"> <strong> Young's Modulus (MPa): </strong> </label>
-    <input id="modOfEText" type="text" style="position:absolute; width:70px; top:670px; left:190px;">
+    <input id="loadText" type="text" style="position:absolute; width:300px; top:20px; left:720px;" placeholder="Enter load here (kN)">
+    <input id="virtualText" type="text" style="position:absolute; width:300px; top:50px; left:720px;" placeholder="(Optional) Solve the virtual truss at this joint letter.">
+    <input id="yieldText" type="text" style="position:absolute; width:370px; top:20px; left:1050px;" placeholder="(Optional) Enter the yield strength of the members (MPa)">
+    <input id="modOfEText" type="text" style="position:absolute; width:370px; top:50px; left:1050px;" placeholder="(Optional) Enter the Young's modulus of the members (MPa)">
 
     <br>
-    <br>
-    <hr>
     <br>
 
     <div id="startUp" class="modal">
