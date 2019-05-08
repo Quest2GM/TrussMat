@@ -42,7 +42,7 @@ body {
 
 .modal {
     display:block;
-    position: absolute;
+    position: fixed;
     z-index: 1;
     left:0;
     top:0;
@@ -50,7 +50,7 @@ body {
     margin-top: -200px;
     height: 200%;
     width: 100%;
-    overflow: auto;
+    overflow: hidden;
     background-color: rgba(0,0,0,0.5);
 }
 
@@ -62,7 +62,7 @@ body {
     top:0;
     height: 100%;
     width: 100%;
-    overflow: auto;
+    overflow: hidden;
     background-color: rgba(0,0,0,0.5);
 }
 

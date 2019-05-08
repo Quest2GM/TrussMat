@@ -42,12 +42,14 @@ let canvAText = document.getElementById("canvAText");
 let canvLLabel = document.getElementById("canvLLabel");
 let canvALabel = document.getElementById("canvALabel");
 let errorModal = document.getElementById("errorModal");
+let warnModal = document.getElementById("warnModal");
 let spanText = document.getElementById("spanText");
 let startUp = document.getElementById("startUp");
 let errorModalBody = document.getElementById("modalBodyText");
-let errorModalHeader = document.getElementById("modalHeaderText");
+let warnModalBody = document.getElementById("warnModalBodyText");
 let modalButton = document.getElementsByClassName("modalButton")[0];
-let closeModalBtn = document.getElementsByClassName("closeModalBtn")[0];
+let errorModalBtn = document.getElementsByClassName("closeModalBtn")[0];
+let warnModalBtn = document.getElementsByClassName("closeModalBtn")[1];
 let instrucHov = document.getElementById("instrucLb");
 let selectHov = document.getElementById("selectLb");
 let memberHov = document.getElementById("memberLb");
@@ -57,6 +59,7 @@ let loadHov = document.getElementById("loadLb");
 let undoHov = document.getElementById("undoLb");
 let clearHov = document.getElementById("clearLb");
 let solveHov = document.getElementById("solveLb");
+let warnCheckBox = document.getElementById("warnCheckBox");
 
 //Member Property Variables
 let newMember;           //When a new member is created with its respective constructor, it is stored in this variable
@@ -103,11 +106,12 @@ let enterFunc = false;
 let clearTB = false;
 let useManual = false;
 let modalButtonClickedOnce = false;
+let warnCBox = false;
 
 function createBorder() {
     context.beginPath();
     context.moveTo(0, 75);
-    context.lineTo(1460, 75);
+    context.lineTo(canvas.width, 75);
     context.lineWidth = 2;
     context.strokeStyle = "#000000";
     context.stroke();
@@ -206,6 +210,8 @@ class undo {
     constructor() {
         this.typeHistory = [];
         this.undoHistory = [];
+        this.deletedHistory = [];
+        this.deletedHistoryType = [];
     }
     addHistory(type) {
         this.typeHistory.push(type);
@@ -236,8 +242,39 @@ class undo {
         } else if (this.typeHistory[this.typeHistory.length - 1] === "S") {
             solveTrussActive = false;
             deleteTable();
+        } else if (this.typeHistory[this.typeHistory.length - 1] === "D") {
+            let x = this.remDHistory();
+            if (x[1] === "M") {
+                memberArray.push(x[0]);
+                if (this.deletedHistoryType[this.deletedHistoryType.length - 1] === "J") {
+                    let y = this.remDHistory();
+                    jointArray.push(y[0]);
+                }
+                if (this.deletedHistoryType[this.deletedHistoryType.length - 1] === "J") {
+                    let z = this.remDHistory();
+                    jointArray.push(z[0]);
+                }
+            }
+            else if (x[1] === "P")
+                pinArray.push(x[0]);
+            else if (x[1] === "R")
+                rollerArray.push(x[0]);
+            else if (x[1] === "L")
+                loadArray.push(x[0]);
         }
         this.remTypeHistory();
+    }
+    addDHistory(element, type) {
+        this.deletedHistory.push(element);
+        this.deletedHistoryType.push(type);
+    }
+    remDHistory() {
+        let x = this.deletedHistory[this.deletedHistory.length - 1];
+        let y = this.deletedHistoryType[this.deletedHistoryType.length - 1];
+        let comb = [x, y];
+        this.deletedHistory.pop();
+        this.deletedHistoryType.pop();
+        return comb;
     }
     takeSnapShot() {
         snapShot = context.getImageData(0, 0, canvas.width, canvas.height);
@@ -257,7 +294,10 @@ class undo {
     delAll() {
         this.typeHistory = [];
         this.undoHistory = [];
+        this.deletedHistory = [];
+        this.deletedHistoryType = [];
     }
+
 }
 
 //Undo History
@@ -351,7 +391,7 @@ function checkCreate(X1, X2, Y1, Y2) {
         return false;
     }
     for (let i of memberArray) {
-        if (i.startX === X1 && i.endX == X2 && i.startY === Y1 && i.endY === Y2) {
+        if ((i.startX === X1 && i.endX == X2 && i.startY === Y1 && i.endY === Y2) || (i.startX === X2 && i.endX === X1 && i.startY === Y2 && i.endY === Y1)) {
             return false;
         }
     }
@@ -364,8 +404,6 @@ function reset() {
     clickedEndMouseInJoint = false;
     startJointVisible = true;
     endJointVisible = true;
-    canvLText.value = "";
-    canvAText.value = "";
     useCurr = false;
     switAngText = false;
     enterFunc = false;
@@ -466,10 +504,9 @@ function instrucActivate() {
     startUp.style.display = "block";
     reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
     createBorder();
-    if (modalButtonClickedOnce) {
-        errorModal.style.display = "block";
-        errorModalBody.textContent = "If you change the span length, all existing data will be deleted!";
-        errorModalHeader.textContent = "Warning!";
+    if (modalButtonClickedOnce && !warnCBox) {
+        warnModal.style.display = "block";
+        warnModalBody.textContent = "If you change the span length, all existing data will be deleted!";
     }
 }
 
@@ -488,7 +525,6 @@ function errorMsg() {
     if (lineBegin) {
         errorModal.style.display = "block";
         errorModalBody.textContent = "You must first finish creating the current member!";
-        errorModalHeader.textContent = "Error!";
         return true;
     }
     return false;
@@ -566,18 +602,15 @@ function solveTruss() {
     if ((memberArray.length + 2 * (pinArray.length) + rollerArray.length !== 2 * (jointArray.length)) || rollerArray.length > 1 || pinArray.length > 1) {
         errorModal.style.display = "block";
         errorModalBody.textContent = "Cannot be solved! This bridge is statically indeterminate!";
-        errorModalHeader.textContent = "Error!";
         return;
     }
     if (loadText.value === "") {
         errorModal.style.display = "block";
         errorModalBody.textContent = "Please specify the load in the 'Load' textbox located in the top right corner!";
-        errorModalHeader.textContent = "Error!";
         return;
     } else if (loadArray.length == 0) {
         errorModal.style.display = "block";
         errorModalBody.textContent = "Please add a load to the bridge!";
-        errorModalHeader.textContent = "Error!";
         return;
     }
     let count = 0;
@@ -673,8 +706,8 @@ function solveTruss() {
     for (let i of pinArray) {
         for (let j of jointArraySort) {
             if (i.posX === j.posX && i.posY === j.posY) {
-                i.pinLabelX = "P" + j.jointLabel + "x";
-                i.pinLabelY = "P" + j.jointLabel + "y";
+                i.pinLabelX = "Pin " + j.jointLabel + "x";
+                i.pinLabelY = "Pin " + j.jointLabel + "y";
                 allForceLabels.push(i.pinLabelX);
                 allForceLabels.push(i.pinLabelY);
                 pL = j.jointLabel;
@@ -685,7 +718,7 @@ function solveTruss() {
     for (let i of rollerArray) {
         for (let j of jointArraySort) {
             if (i.posX === j.posX && i.posY === j.posY) {
-                i.rollerLabel = "R" + j.jointLabel + "y";
+                i.rollerLabel = "Roller " + j.jointLabel + "y";
                 allForceLabels.push(i.rollerLabel);
                 rL = j.jointLabel;
                 break;
@@ -727,14 +760,14 @@ function solveTruss() {
     let cnt = 0, loadMag = 0;
     for (let i of jointArraySort) {
         if (i.hasPin === true) {
-            A[cnt][allForceLabels.indexOf("P" + pL + "x")] = 1;
-            A[cnt + 1][allForceLabels.indexOf("P" + pL + "y")] = 1;
-            AV[cnt][allForceLabels.indexOf("P" + pL + "x")] = 1;
-            AV[cnt + 1][allForceLabels.indexOf("P" + pL + "y")] = 1;
+            A[cnt][allForceLabels.indexOf("Pin " + pL + "x")] = 1;
+            A[cnt + 1][allForceLabels.indexOf("Pin " + pL + "y")] = 1;
+            AV[cnt][allForceLabels.indexOf("Pin " + pL + "x")] = 1;
+            AV[cnt + 1][allForceLabels.indexOf("Pin " + pL + "y")] = 1;
         }
         if (i.hasRoller === true) {
-            A[cnt + 1][allForceLabels.indexOf("R" + rL + "y")] = 1;
-            AV[cnt + 1][allForceLabels.indexOf("R" + rL + "y")] = 1;
+            A[cnt + 1][allForceLabels.indexOf("Roller " + rL + "y")] = 1;
+            AV[cnt + 1][allForceLabels.indexOf("Roller " + rL + "y")] = 1;
         }
         if (i.hasLoad === true) {
             let nameLoad = "", loadCount = 0;
@@ -1345,6 +1378,14 @@ function checkRPLExists(load) {
     return check;
 }
 
+function checkInJoint(j) {
+    for (let i of memberArray) {
+        if ((i.startX === j.posX && i.startY === j.posY) || (i.endX === j.posX && i.endY === j.posY))
+            return true;
+    }
+    return false;
+}
+
 //Active Run Code
 //---------------------------------------------------------------------------
 
@@ -1376,11 +1417,9 @@ canvas.addEventListener("mousedown", (event) => {
                 if (loadText.value === "") {
                     errorModal.style.display = "block";
                     errorModalBody.textContent = "Please specify the load in the 'Load' textbox located in the top right corner!";
-                    errorModalHeader.textContent = "Error!";
                 } else if (isNaN(parseInt(loadText.value))) {
                     errorModal.style.display = "block";
                     errorModalBody.textContent = "The load you have specified in the 'Load' textbox is not a valid entry! Enter a number in kilonewtons!";
-                    errorModalHeader.textContent = "Error!";
                 } else {
                     uHistory.addHistory("L");
                     newLoad = new Load(currX, currY, Math.round(parseFloat(loadText.value) * 100) / 100, "#000000");
@@ -1477,8 +1516,13 @@ canvas.addEventListener("mousemove", (event) => {
         remElements();
 });
 
-closeModalBtn.addEventListener("click", (e) => {
+errorModalBtn.addEventListener("click", (e) => {
     errorModal.style.display = "none";
+});
+warnModalBtn.addEventListener("click", (e) => {
+    warnModal.style.display = "none";
+    if (warnCheckBox.checked === true)
+        warnCBox = true;
 });
 
 window.addEventListener("click", (e) => {
@@ -1489,18 +1533,17 @@ modalButton.addEventListener("click", (e) => {
     if (spanText.value === "" || isNaN(parseInt(spanText.value)) || parseFloat(spanText.value) <= 0) {
         errorModal.style.display = "block";
         errorModalBody.textContent = "Please enter a valid span before proceeding!";
-        errorModalHeader.textContent = "Error!";
     } else if (modalButtonClickedOnce) {
         if (parseFloat(spanText.value) !== actualSize) {
             startUp.style.display = "none";
-            actualSize = parseFloat(spanText.value);
+            actualSize = parseInt(spanText.value);
             clearAll();
         } else {
             startUp.style.display = "none";
         }
     } else {
         startUp.style.display = "none";
-        actualSize = parseFloat(spanText.value);
+        actualSize = parseInt(spanText.value);
         modalButtonClickedOnce = true;
     }
 });
@@ -1519,7 +1562,6 @@ document.addEventListener("keydown", (e) => {
             if (canvLText.value == "" || canvLText.value == "-") {
                 errorModal.style.display = "block";
                 errorModalBody.textContent = "Please enter a valid length!";
-                errorModalHeader.textContent = "Error!";
             } else {
                 switAngText = true;
                 enterFunc = true;
@@ -1530,7 +1572,6 @@ document.addEventListener("keydown", (e) => {
             if (canvAText.value == "" || canvAText.value == "-") {
                 errorModal.style.display = "block";
                 errorModalBody.textContent = "Please enter a valid angle between 0 and 360 degrees!";
-                errorModalHeader.textContent = "Error!";
             } else {
                 useManual = true;
                 createMember();
@@ -1551,20 +1592,49 @@ document.addEventListener("keydown", (e) => {
             createBorder();
             uHistory.addHistory("D");
             if (memberClick) {
+                let mem = memberArray[currMemberClick];
+                let index = 0; let count = 0; let indexR1 = -1; let indexR2 = -1;
                 memberArray.splice(currMemberClick, 1);
-                jointArray.splice(currMemberClick * 2, 2);
+                while (count !== 2) {
+                    if ((mem.startX === jointArray[index].posX && mem.startY === jointArray[index].posY) || (mem.endX === jointArray[index].posX && mem.endY === jointArray[index].posY)) {
+                        if (!checkInJoint(jointArray[index])) {
+                            if (indexR1 === -1)
+                                indexR1 = index;
+                            else if (indexR2 === -1)
+                                indexR2 = index;
+                            else
+                                break;
+                        }
+                        count++;
+                    }
+                    index++;
+                }
+                if (indexR1 !== -1) {
+                    uHistory.addDHistory(jointArray[indexR1], "J");
+                    jointArray.splice(indexR1, 1);
+                }
+                if (indexR2 !== -1) {
+                    uHistory.addDHistory(jointArray[indexR2 - 1], "J");
+                    jointArray.splice(indexR2 - 1, 1);
+                }
+                uHistory.addDHistory(mem, "M");
             } else if (pinClick) {
+                uHistory.addDHistory(pinArray[currPinClick], "P");
                 pinArray.splice(currPinClick, 1);
             } else if (rollerClick) {
+                uHistory.addDHistory(rollerArray[currRollerClick], "R");
                 rollerArray.splice(currRollerClick, 1);
             } else if (loadClick) {
+                uHistory.addDHistory(loadArray[currLoadClick], "L");
                 loadArray.splice(currLoadClick, 1);
             }
             reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
             createBorder();
             canvas.style.cursor = "";
-            if (solveTrussActive)
+            if (solveTrussActive) {
                 deleteTable();
+                solveTrussActive = false;
+            }
         }
     }
 });

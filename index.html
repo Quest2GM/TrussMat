@@ -12,7 +12,7 @@
 <body>
     <p id="lengthText" class="lb" style="position:absolute; top:10px; left:20px;"> <strong> Length (m): </strong></p>
     <p id="angleText" class="lb" style="position:absolute; top:37px; left:16px;"> <strong> Angle (deg): </strong></p>
-    <canvas id="newCanvas" width="1460" height="700"></canvas>
+    <canvas id="newCanvas" width="1480" height="820"></canvas>
 
     <input id="canvLText" type="text" style="position:absolute; height:18px; width:100px; top:17px; left:110px;">
     <input id="canvAText" type="text" style="position:absolute; height:18px; width:100px; top:45px; left:110px;">
@@ -36,10 +36,10 @@
     <button class="canvButtons" , style="position:absolute; height:50px; width:50px; top:20px; left:650px; font-size:20px;" , onclick="solveTruss()" onmouseover="fSolveHov(true)" onmouseout="fSolveHov(false)"> ▶️ </button>
     <p id="solveLb" style="position:absolute; top:75px; left:630px; color:transparent"> Solve Truss </p>
 
-    <input id="loadText" type="text" style="position:absolute; width:300px; top:20px; left:720px;" placeholder="Enter load here (kN)">
-    <input id="virtualText" type="text" style="position:absolute; width:300px; top:50px; left:720px;" placeholder="(Optional) Solve the virtual truss at this joint letter.">
-    <input id="yieldText" type="text" style="position:absolute; width:370px; top:20px; left:1050px;" placeholder="(Optional) Enter the yield strength of the members (MPa)">
-    <input id="modOfEText" type="text" style="position:absolute; width:370px; top:50px; left:1050px;" placeholder="(Optional) Enter the Young's modulus of the members (MPa)">
+    <input id="loadText" type="text" style="position:absolute; width:380px; top:20px; left:710px;" placeholder="Enter load here (kN)">
+    <input id="virtualText" type="text" style="position:absolute; width:380px; top:50px; left:710px;" placeholder="(Optional) Solve virtual truss at this joint letter [capital letters].">
+    <input id="yieldText" type="text" style="position:absolute; width:370px; top:20px; left:1105px;" placeholder="(Optional) Enter the yield strength of the members (MPa)">
+    <input id="modOfEText" type="text" style="position:absolute; width:370px; top:50px; left:1105px;" placeholder="(Optional) Enter the Young's modulus of the members (MPa)">
 
     <br>
     <br>
@@ -81,6 +81,19 @@
             <div class="modalBody">
                 <p id="modalBodyText">                    
                 </p>
+            </div>
+        </div>
+    </div>
+    <div id="warnModal" class="modalError">
+        <div class="modalContent">
+            <div class="modalHeader">
+                <span class="closeModalBtn">&times;</span>
+                <h2 id="warnModalHeaderText">Warning!</h2>
+            </div>
+            <div class="modalBody">
+                <p id="warnModalBodyText">                    
+                </p>
+                <input id="warnCheckBox" type="checkbox"> Do not show again.
             </div>
         </div>
     </div>
