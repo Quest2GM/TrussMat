@@ -73,6 +73,13 @@ body {
     box-shadow: 0 5px 8px 0 rgba(0, 0, 0, 0.17), 0 7px 20px 0 rgba(0, 0, 0, 0.17);
 }
 
+.modalTextContent {
+    background-color: #f4f4f4;
+    margin: 20% auto;
+    width:25%;
+    box-shadow: 0 5px 8px 0 rgba(0, 0, 0, 0.17), 0 7px 20px 0 rgba(0, 0, 0, 0.17);
+}
+
 .closeModalBtn {
     color: #fff;
     float: right;
@@ -100,5 +107,5 @@ body {
 }
 
 .lb {
-    font-size:13px;
+    font-size:12px;
 }

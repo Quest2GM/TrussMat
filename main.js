@@ -31,25 +31,31 @@ let angleDisplayed;
 let actualSize;       //The scaled size of the canvas width, indicating the span of the bridge (plus 10 metres)
 
 //Paragraph Changer Variables
+let lengthText = document.getElementById("lengthText");
+let angleText = document.getElementById("angleText");
 let loadText = document.getElementById("loadText");
 let loadDiv = document.getElementById("loadDiv");
 let loadTable = document.getElementById("loadTable");
 let virtualText = document.getElementById("virtualText");
 let yieldText = document.getElementById("yieldText");
 let modOfEText = document.getElementById("modOfEText");
-let canvLText = document.getElementById("canvLText");
-let canvAText = document.getElementById("canvAText");
 let canvLLabel = document.getElementById("canvLLabel");
 let canvALabel = document.getElementById("canvALabel");
 let errorModal = document.getElementById("errorModal");
 let warnModal = document.getElementById("warnModal");
+let textModal = document.getElementById("textModal");
 let spanText = document.getElementById("spanText");
 let startUp = document.getElementById("startUp");
 let errorModalBody = document.getElementById("modalBodyText");
-let warnModalBody = document.getElementById("warnModalBodyText");
+let warnModalBody = document.getElementById("warnModalBodyText")
+let lengthModalText = document.getElementById("lengthModalText");
+let angleModalText = document.getElementById("angleModalText");
+let setMem = document.getElementById("setMem");
 let modalButton = document.getElementsByClassName("modalButton")[0];
-let errorModalBtn = document.getElementsByClassName("closeModalBtn")[0];
-let warnModalBtn = document.getElementsByClassName("closeModalBtn")[1];
+let modalTextButton = document.getElementsByClassName("modalButton")[1];
+let errorModalBtn = document.getElementsByClassName("closeModalBtn")[2];
+let warnModalBtn = document.getElementsByClassName("closeModalBtn")[0];
+let textModalBtn = document.getElementsByClassName("closeModalBtn")[1];
 let instrucHov = document.getElementById("instrucLb");
 let selectHov = document.getElementById("selectLb");
 let memberHov = document.getElementById("memberLb");
@@ -60,6 +66,10 @@ let undoHov = document.getElementById("undoLb");
 let clearHov = document.getElementById("clearLb");
 let solveHov = document.getElementById("solveLb");
 let warnCheckBox = document.getElementById("warnCheckBox");
+
+// Initial Conditions
+setMem.disabled = true;
+setMem.style.color = "gray";
 
 //Member Property Variables
 let newMember;           //When a new member is created with its respective constructor, it is stored in this variable
@@ -101,17 +111,26 @@ let currRollerClick = -2;
 let currLoadClick = -2;
 
 //Other
-let switAngText = false;
-let enterFunc = false;
-let clearTB = false;
 let useManual = false;
 let modalButtonClickedOnce = false;
 let warnCBox = false;
 
 function createBorder() {
     context.beginPath();
-    context.moveTo(0, 75);
-    context.lineTo(canvas.width, 75);
+    context.moveTo(120, 0);
+    context.lineTo(120, 100);
+    context.lineWidth = 2;
+    context.strokeStyle = "#000000";
+    context.stroke();
+    context.beginPath();
+    context.moveTo(690, 0);
+    context.lineTo(690, 100);
+    context.lineWidth = 2;
+    context.strokeStyle = "#000000";
+    context.stroke();
+    context.beginPath();
+    context.moveTo(0, 100);
+    context.lineTo(canvas.width, 100);
     context.lineWidth = 2;
     context.strokeStyle = "#000000";
     context.stroke();
@@ -317,8 +336,8 @@ function tempMember(posX, posY) {
         unTrackedMember = new Member(startX, startY, posX, posY, len, angle, "#5477ea");
     }
     unTrackedMember.buildMember();
-    canvLText.value = Math.round(len * 100) / 100;
-    canvAText.value = Math.round(angle * 100) / 100;
+    lengthText.textContent = "Length (m): " + Math.round(len * 100) / 100;
+    angleText.textContent = "Angle (deg): " + Math.round(angle * 10) / 10;
 }
 function tempJoint(posX, posY) {
     let unTrackedJoint = new Joint(posX, posY);
@@ -369,17 +388,17 @@ function calcLength(y2, y1, x2, x1) {
     return Math.floor(Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)) * ((actualSize + 10) / canvas.width) * 100) / 100;
 }
 function calcAngle(y2, y1, x2, x1) {
-    return Math.floor((Math.abs((Math.atan((y2 - y1) / (x2 - x1))) / (2 * Math.PI) * 360)) * 100) / 100;
+    return Math.floor((Math.abs((Math.atan((y2 - y1) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
 }
 function calcRealAngle(y2, y1, x2, x1) {
     if (y2 < y1 && x2 < x1) // Quadrant 2
-        return 180 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 100) / 100;
+        return 180 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
     else if (y2 > y1 && x2 < x1) // Quadrant 3
-        return 180 + Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 100) / 100;
+        return 180 + Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
     else if (y2 > y1 && x2 > x1) // Quadrant 4
-        return 360 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 100) / 100;
+        return 360 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
     else // Quadrant 1
-        return Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 100) / 100;
+        return Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
 }
 function distanceBetween(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
@@ -405,14 +424,17 @@ function reset() {
     startJointVisible = true;
     endJointVisible = true;
     useCurr = false;
-    switAngText = false;
-    enterFunc = false;
-    useManual = false;
+    lengthModalText.value = "";
+    angleModalText.value = "";
+    setMem.disabled = true;
+    setMem.style.color = "gray";
 }
 
 //MouseDown Functions
 function createMember() {
     if (!lineBegin) {
+        setMem.disabled = false;
+        setMem.style.color = "white";
         lineBegin = true;
         startX = mousePos.x; startY = mousePos.y;
         uHistory.addHistory("X");
@@ -434,17 +456,17 @@ function createMember() {
             endY = mousePos.y;
             inJoint(false);
         } else {
-            let posCanvAValue = parseFloat(canvAText.value);
+            let posCanvAValue = parseFloat(angleModalText.value);
             while (posCanvAValue < 0) {
                 posCanvAValue += 360.0;
             }
 
             if (useCurr) {
-                endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + currStartX;
-                endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + currStartY;
+                endX = (canvas.width * parseFloat(lengthModalText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + currStartX;
+                endY = (canvas.width * parseFloat(lengthModalText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + currStartY;
             } else {
-                endX = (canvas.width * parseFloat(canvLText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + startX;
-                endY = (canvas.width * parseFloat(canvLText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + startY;
+                endX = (canvas.width * parseFloat(lengthModalText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + startX;
+                endY = (canvas.width * parseFloat(lengthModalText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + startY;
             }
             inJoint(true);
         }
@@ -491,8 +513,8 @@ function createMember() {
             angleDisplayed = 0;
         }
         //Length and Angle Updates to the Screen
-        canvLText.value = Math.round(len * 100) / 100;
-        canvAText.value = Math.round(angleDisplayed * 100) / 100;
+        lengthText.textContent = "Length (m): " + Math.round(len * 100) / 100;
+        angleText.textContent = "Angle (deg): " + Math.round(angleDisplayed * 10) / 10;
 
         //Reset necessary variables to default
         reset();
@@ -577,6 +599,12 @@ function loadActivate() {
         createBorder();
     }
 }
+function setMemberActivate() {
+    lengthModalText.value = "";
+    angleModalText.value = "";
+    textModal.style.display = "block";
+    lengthModalText.focus();
+}
 
 function undoLast() {
     errorMsg();
@@ -588,8 +616,8 @@ function clearAll() {
     errorMsg();
     if (!errorMsg()) {
         context.clearRect(0, 0, canvas.width, canvas.height);
-        canvLText.value = "";
-        canvAText.value = "";
+        lengthText.textContent = "Length (m): ";
+        angleText.textContent = "Angle (deg): ";
         memberArray = []; jointArray = []; pinArray = []; rollerArray = []; loadArray = [];
         deleteTable();
         loadText.value = ""; virtualText.value = ""; yieldText.value = ""; modOfEText.value = "";
@@ -1436,15 +1464,15 @@ canvas.addEventListener("mousedown", (event) => {
             loadClick = false;
             if (pos[4] == currMemberClick && memberClick) {
                 reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false);
-                canvLText.value = "";
-                canvAText.value = "";
+                lengthText.textContent = "Length (m): ";
+                angleText.textContent = "Angle (deg): ";
                 memberClick = false;
                 currMemberClick = -2;
             } else {
                 reDrawCanvas(pos[0], pos[1], pos[2], pos[3], true, false, false, false);
                 if (pos[4] !== -1) {
-                    canvLText.value = Math.round(memberArray[pos[4]].len * 100) / 100;
-                    canvAText.value = Math.round(memberArray[pos[4]].angle * 100) / 100;
+                    lengthText.textContent = "Length (m): " + Math.round(memberArray[pos[4]].len * 100) / 100;
+                    angleText.textContent = "Angle (deg): " + Math.round(memberArray[pos[4]].angle * 10) / 10;
                 }
                 memberClick = true;
                 currMemberClick = pos[4];
@@ -1455,8 +1483,8 @@ canvas.addEventListener("mousedown", (event) => {
             loadClick = false;
             if (pos[4] == currPinClick && pinClick) {
                 reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false);
-                canvLText.value = "";
-                canvAText.value = "";
+                lengthText.textContent = "Length (m): ";
+                angleText.textContent = "Angle (deg): ";
                 pinClick = false;
                 currPinClick = -2;
             } else {
@@ -1470,8 +1498,8 @@ canvas.addEventListener("mousedown", (event) => {
             loadClick = false;
             if (pos[4] == currRollerClick && rollerClick) {
                 reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false);
-                canvLText.value = "";
-                canvAText.value = "";
+                lengthText.textContent = "Length (m): ";
+                angleText.textContent = "Angle (deg): ";
                 rollerClick = false;
                 currRollerClick = -2;
             } else {
@@ -1485,8 +1513,8 @@ canvas.addEventListener("mousedown", (event) => {
             rollerClick = false;
             if (pos[4] == currLoadClick && loadClick) {
                 reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false);
-                canvLText.value = "";
-                canvAText.value = "";
+                lengthText.textContent = "Length (m): ";
+                angleText.textContent = "Angle (deg): ";
                 loadClick = false;
                 currLoadClick = -2;
             } else {
@@ -1504,10 +1532,7 @@ canvas.addEventListener("mousemove", (event) => {
     event.stopPropagation();
 
     mousePos = getMousePos(event);
-    clearTB = false;
     useCurr = false;
-    switAngText = false;
-    enterFunc = false;
     if (memberJointButtonActive && lineBegin) {
         mHistory.restoreSnapShot();
         tempMember(mousePos.x, mousePos.y);
@@ -1524,10 +1549,26 @@ warnModalBtn.addEventListener("click", (e) => {
     if (warnCheckBox.checked === true)
         warnCBox = true;
 });
-
+textModalBtn.addEventListener("click", (e) => {
+    textModal.style.display = "none";
+    lengthModalText.value = "";
+    angleModalText.value = "";
+});
+modalTextButton.addEventListener("click", (e) => {
+    if (isNaN(parseFloat(lengthModalText.value)) || isNaN(parseFloat(angleModalText.value))) {
+        errorModal.style.display = "block";
+        errorModalBody.textContent = "The length or angle you have entered are invalid!";
+    } else {
+        textModal.style.display = "none";
+        useManual = true;
+        createMember();
+    }
+});
 window.addEventListener("click", (e) => {
     if (e.target === errorModal)
         errorModal.style.display = "none";
+    if (e.target === textModal)
+        textModal.style.display = "none";
 });
 modalButton.addEventListener("click", (e) => {
     if (spanText.value === "" || isNaN(parseInt(spanText.value)) || parseFloat(spanText.value) <= 0) {
@@ -1549,43 +1590,7 @@ modalButton.addEventListener("click", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-    if (memberJointButtonActive && lineBegin) {
-        e.preventDefault();
-        if (((e.which > 47 && e.which <= 57) || e.which == 189 || e.which == 190) && !switAngText) {
-            if (!clearTB) {
-                clearTB = true;
-                canvLText.value = "";
-                canvAText.value = "";
-            }
-            canvLText.value += e.key;
-        } else if ((e.which == 9 || e.which == 13) && !enterFunc) {
-            if (canvLText.value == "" || canvLText.value == "-") {
-                errorModal.style.display = "block";
-                errorModalBody.textContent = "Please enter a valid length!";
-            } else {
-                switAngText = true;
-                enterFunc = true;
-            }
-        } else if (((e.which > 47 && e.which <= 57) || e.which == 189 || e.which == 190) && switAngText) {
-            canvAText.value += e.key;
-        } else if ((e.which == 9 || e.which == 13) && enterFunc) {
-            if (canvAText.value == "" || canvAText.value == "-") {
-                errorModal.style.display = "block";
-                errorModalBody.textContent = "Please enter a valid angle between 0 and 360 degrees!";
-            } else {
-                useManual = true;
-                createMember();
-                switAngText = false;
-                enterFunc = false;
-            }
-        } else if (e.which == 8) {
-            if (!switAngText) {
-                canvLText.value = canvLText.value.substring(0, canvLText.value.length - 1);
-            } else {
-                canvAText.value = canvAText.value.substring(0, canvAText.value.length - 1);
-            }
-        }
-    } else if (selectButtonActive) {
+    if (selectButtonActive) {
         if (e.which === 46 && (memberClick || pinClick || rollerClick || loadClick)) { // Delete key
             e.preventDefault();
             reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
@@ -1637,6 +1642,17 @@ document.addEventListener("keydown", (e) => {
             }
         } else if (e.ctrlKey && e.which === 90) {
             undoLast();
+        }
+    } else if (e.ctrlKey && e.which === 77) {
+        if (lineBegin) {
+            e.preventDefault();
+            lengthModalText.value = "";
+            angleModalText.value = "";
+            textModal.style.display = "block";
+            lengthModalText.focus();
+        } else {
+            errorModal.style.display = "block";
+            errorModalBody.textContent = "Start making a member first and then hit 'Ctrl+M' to set it's length and angle!";
         }
     } else {
         if (e.ctrlKey && e.which === 90) {
