@@ -317,8 +317,8 @@ function tempMember(posX, posY) {
         unTrackedMember = new Member(startX, startY, posX, posY, len, angle, "#5477ea");
     }
     unTrackedMember.buildMember();
-    canvLText.value = len;
-    canvAText.value = angle;
+    canvLText.value = Math.round(len * 100) / 100;
+    canvAText.value = Math.round(angle * 100) / 100;
 }
 function tempJoint(posX, posY) {
     let unTrackedJoint = new Joint(posX, posY);
@@ -369,17 +369,17 @@ function calcLength(y2, y1, x2, x1) {
     return Math.floor(Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)) * ((actualSize + 10) / canvas.width) * 100) / 100;
 }
 function calcAngle(y2, y1, x2, x1) {
-    return Math.floor((Math.abs((Math.atan((y2 - y1) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+    return Math.floor((Math.abs((Math.atan((y2 - y1) / (x2 - x1))) / (2 * Math.PI) * 360)) * 100) / 100;
 }
 function calcRealAngle(y2, y1, x2, x1) {
     if (y2 < y1 && x2 < x1) // Quadrant 2
-        return 180 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+        return 180 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 100) / 100;
     else if (y2 > y1 && x2 < x1) // Quadrant 3
-        return 180 + Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+        return 180 + Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 100) / 100;
     else if (y2 > y1 && x2 > x1) // Quadrant 4
-        return 360 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+        return 360 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 100) / 100;
     else // Quadrant 1
-        return Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+        return Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 100) / 100;
 }
 function distanceBetween(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
@@ -491,8 +491,8 @@ function createMember() {
             angleDisplayed = 0;
         }
         //Length and Angle Updates to the Screen
-        canvLText.value = len;
-        canvAText.value = angleDisplayed;
+        canvLText.value = Math.round(len * 100) / 100;
+        canvAText.value = Math.round(angleDisplayed * 100) / 100;
 
         //Reset necessary variables to default
         reset();
@@ -1443,8 +1443,8 @@ canvas.addEventListener("mousedown", (event) => {
             } else {
                 reDrawCanvas(pos[0], pos[1], pos[2], pos[3], true, false, false, false);
                 if (pos[4] !== -1) {
-                    canvLText.value = memberArray[pos[4]].len;
-                    canvAText.value = memberArray[pos[4]].angle;
+                    canvLText.value = Math.round(memberArray[pos[4]].len * 100) / 100;
+                    canvAText.value = Math.round(memberArray[pos[4]].angle * 100) / 100;
                 }
                 memberClick = true;
                 currMemberClick = pos[4];
@@ -1534,7 +1534,7 @@ modalButton.addEventListener("click", (e) => {
         errorModal.style.display = "block";
         errorModalBody.textContent = "Please enter a valid span before proceeding!";
     } else if (modalButtonClickedOnce) {
-        if (parseFloat(spanText.value) !== actualSize) {
+        if (parseInt(spanText.value) !== actualSize) {
             startUp.style.display = "none";
             actualSize = parseInt(spanText.value);
             clearAll();
@@ -1635,6 +1635,13 @@ document.addEventListener("keydown", (e) => {
                 deleteTable();
                 solveTrussActive = false;
             }
+        } else if (e.ctrlKey && e.which === 90) {
+            undoLast();
+        }
+    } else {
+        if (e.ctrlKey && e.which === 90) {
+            e.preventDefault();
+            undoLast();
         }
     }
 });
