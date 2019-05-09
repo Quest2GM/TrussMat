@@ -6,7 +6,6 @@
 //Canvas Variables
 let canvas = document.getElementById("newCanvas")   //The canvas which is being displayed on scree
 let context = canvas.getContext("2d");              //The type of context being used; 2D in this case
-createBorder();
 let rect = canvas.getBoundingClientRect();          //Refers to the rectangle with the 1 px black border (ie. what creates the canvas)
 let snapShot;                                       //Used to prevent multiple lines begin created during member-joint created
 
@@ -16,6 +15,7 @@ let pinButtonActive = false;          //True if the user has clicked the pin but
 let selectButtonActive = false;
 let rollerButtonActive = false;       //True if the user has clicked the roller button
 let loadButtonActive = false;       //True if the user has clicked the remove button
+let vLoadButtonActive = false;
 let solveTrussActive = false;
 
 //Line Property Variables
@@ -36,7 +36,6 @@ let angleText = document.getElementById("angleText");
 let loadText = document.getElementById("loadText");
 let loadDiv = document.getElementById("loadDiv");
 let loadTable = document.getElementById("loadTable");
-let virtualText = document.getElementById("virtualText");
 let yieldText = document.getElementById("yieldText");
 let modOfEText = document.getElementById("modOfEText");
 let canvLLabel = document.getElementById("canvLLabel");
@@ -62,6 +61,7 @@ let memberHov = document.getElementById("memberLb");
 let pinHov = document.getElementById("pinLb");
 let rollerHov = document.getElementById("rollerLb");
 let loadHov = document.getElementById("loadLb");
+let vLoadHov = document.getElementById("vLoadLb");
 let undoHov = document.getElementById("undoLb");
 let clearHov = document.getElementById("clearLb");
 let solveHov = document.getElementById("solveLb");
@@ -70,6 +70,7 @@ let warnCheckBox = document.getElementById("warnCheckBox");
 // Initial Conditions
 setMem.disabled = true;
 setMem.style.color = "gray";
+createBorder();
 
 //Member Property Variables
 let newMember;           //When a new member is created with its respective constructor, it is stored in this variable
@@ -96,7 +97,9 @@ let pinArray = [];      //newPin is immediately stored in this array
 let newRoller;          //When a new roller is created, it is stored here
 let rollerArray = [];   //newRoller is immediately stored in this array
 let newLoad;            //When a new load is created, it is stored here
-let loadArray = [];     //newLoad is immediately stored in this array
+let newVLoad;
+let loadArray = [];     //new Load is immediately stored in this array
+let virtualArray = [];  //new virtual load is immediately stored in this array
 let currX;              //Stores the x-coordinate if the user clicks in a joint to add a support
 let currY;              //Stores the y-coordinate if the user clicks in a joint to add a support
 
@@ -105,10 +108,12 @@ let memberClick = false;
 let pinClick = false;
 let rollerClick = false;
 let loadClick = false;
+let virtualLoadClick = false;
 let currMemberClick = -2;
 let currPinClick = -2;
 let currRollerClick = -2;
 let currLoadClick = -2;
+let currVirtualLoadClick = -2;
 
 //Other
 let useManual = false;
@@ -123,8 +128,8 @@ function createBorder() {
     context.strokeStyle = "#000000";
     context.stroke();
     context.beginPath();
-    context.moveTo(690, 0);
-    context.lineTo(690, 100);
+    context.moveTo(755, 0);
+    context.lineTo(755, 100);
     context.lineWidth = 2;
     context.strokeStyle = "#000000";
     context.stroke();
@@ -167,7 +172,7 @@ class Joint {
         this.posX = posX; this.posY = posY;
         this.radius = 10; this.colour = "#909696";
         this.jointLabel = "";
-        this.hasPin = false; this.hasRoller = false; this.hasLoad = false;
+        this.hasPin = false; this.hasRoller = false; this.hasLoad = false; this.hasVirtualLoad = false;
     }
     buildJoint() {
         context.beginPath();
@@ -224,6 +229,25 @@ class Load {
     }
 }
 
+class VirtualLoad {
+    constructor(posX, posY, colour) {
+        this.posX = posX; this.posY = posY;
+        this.vLoadLabel = "";
+        this.mag = 1;
+        this.colour = colour;
+    }
+    buildLoad() {
+        context.beginPath();
+        context.lineWidth = 5;
+        context.moveTo(this.posX, this.posY); context.lineTo(this.posX, this.posY + 30);
+        context.moveTo(this.posX, this.posY + 29); context.lineTo(this.posX - 10, this.posY + 19);
+        context.moveTo(this.posX, this.posY + 29); context.lineTo(this.posX + 10, this.posY + 19);
+        context.fillStyle = this.colour; context.fillRect(this.posX - 2, this.posY + 27, 4, 4);
+        context.strokeStyle = this.colour; context.stroke();
+        context.font = "18px Cambria"; context.fillStyle = this.colour; context.fillText(this.mag + " kN", this.posX - 30, this.posY + 50);
+    }
+}
+
 // Class for Undo History
 class undo {
     constructor() {
@@ -248,6 +272,8 @@ class undo {
             rollerArray.pop();
         } else if (this.typeHistory[this.typeHistory.length - 1] === "L") {
             loadArray.pop();
+        } else if (this.typeHistory[this.typeHistory.length - 1] === "V") {
+            virtualArray.pop();
         } else if (this.typeHistory[this.typeHistory.length - 1] === "M") {
             memberArray.pop();
             if (this.typeHistory[this.typeHistory.length - 2] === "J") {
@@ -280,6 +306,8 @@ class undo {
                 rollerArray.push(x[0]);
             else if (x[1] === "L")
                 loadArray.push(x[0]);
+            else if (x[1] === "V")
+                virtualArray.push(x[0]);
         }
         this.remTypeHistory();
     }
@@ -385,20 +413,20 @@ function inJoint(doManual) {
 
 //Calculation Functions: Length, Angles, Distance
 function calcLength(y2, y1, x2, x1) {
-    return Math.floor(Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)) * ((actualSize + 10) / canvas.width) * 100) / 100;
+    return Math.round(Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)) * ((actualSize + 10) / canvas.width) * 10000) / 10000;
 }
 function calcAngle(y2, y1, x2, x1) {
-    return Math.floor((Math.abs((Math.atan((y2 - y1) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+    return Math.round((Math.abs((Math.atan((y2 - y1) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10000) / 10000;
 }
 function calcRealAngle(y2, y1, x2, x1) {
     if (y2 < y1 && x2 < x1) // Quadrant 2
-        return 180 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+        return 180 - Math.round((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10000) / 10000;
     else if (y2 > y1 && x2 < x1) // Quadrant 3
-        return 180 + Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+        return 180 + Math.round((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10000) / 10000;
     else if (y2 > y1 && x2 > x1) // Quadrant 4
-        return 360 - Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+        return 360 - Math.round((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10000) / 10000;
     else // Quadrant 1
-        return Math.floor((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10) / 10;
+        return Math.round((Math.abs((Math.atan((y1 - y2) / (x2 - x1))) / (2 * Math.PI) * 360)) * 10000) / 10000;
 }
 function distanceBetween(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
@@ -424,6 +452,7 @@ function reset() {
     startJointVisible = true;
     endJointVisible = true;
     useCurr = false;
+    useManual = false;
     lengthModalText.value = "";
     angleModalText.value = "";
     setMem.disabled = true;
@@ -440,6 +469,7 @@ function createMember() {
         uHistory.addHistory("X");
         uHistory.remTypeHistory();
         if (inJoint(false)) {
+            console.log("Hi");
             useCurr = true;
             tempJoint(currStartX, currStartY);
         } else {
@@ -458,9 +488,9 @@ function createMember() {
         } else {
             let posCanvAValue = parseFloat(angleModalText.value);
             while (posCanvAValue < 0) {
-                posCanvAValue += 360.0;
+                posCanvAValue += 360;
             }
-
+            console.log("--------");
             if (useCurr) {
                 endX = (canvas.width * parseFloat(lengthModalText.value) * Math.cos(Math.PI * posCanvAValue / 180)) / (actualSize + 10) + currStartX;
                 endY = (canvas.width * parseFloat(lengthModalText.value) * Math.sin(Math.PI * (posCanvAValue - 180) / 180)) / (actualSize + 10) + currStartY;
@@ -524,7 +554,7 @@ function createMember() {
 //Activation and Button Functions
 function instrucActivate() {
     startUp.style.display = "block";
-    reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
+    reDrawCanvas(-1, -1, -1, -1, false, false, false, false, false);
     createBorder();
     if (modalButtonClickedOnce && !warnCBox) {
         warnModal.style.display = "block";
@@ -538,8 +568,9 @@ function memberPinActivate() {
     rollerButtonActive = false;
     memberJointButtonActive = true;
     loadButtonActive = false;
+    vLoadButtonActive = false;
     selectButtonActive = false;
-    reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
+    reDrawCanvas(-1, -1, -1, -1, false, false, false, false, false);
     createBorder();
 }
 
@@ -560,6 +591,7 @@ function selectActivate() {
         memberJointButtonActive = false;
         loadButtonActive = false;
         selectButtonActive = true;
+        vLoadButtonActive = false;
     }
 }
 
@@ -571,6 +603,7 @@ function pinActivate() {
         memberJointButtonActive = false;
         loadButtonActive = false;
         selectButtonActive = false;
+        vLoadButtonActive = false;
         reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
         createBorder();
     }
@@ -583,7 +616,8 @@ function rollerActivate() {
         memberJointButtonActive = false;
         loadButtonActive = false;
         selectButtonActive = false;
-        reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
+        vLoadButtonActive = false;
+        reDrawCanvas(-1, -1, -1, -1, false, false, false, false, false);
         createBorder();
     }
 }
@@ -595,10 +629,25 @@ function loadActivate() {
         memberJointButtonActive = false;
         loadButtonActive = true;
         selectButtonActive = false;
+        vLoadButtonActive = false;
         reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
         createBorder();
     }
 }
+function vLoadActivate() {
+    errorMsg();
+    if (!errorMsg()) {
+        pinButtonActive = false;
+        rollerButtonActive = false;
+        memberJointButtonActive = false;
+        loadButtonActive = false;
+        selectButtonActive = false;
+        vLoadButtonActive = true;
+        reDrawCanvas(-1, -1, -1, -1, false, false, false, false, false);
+        createBorder();
+    }
+}
+
 function setMemberActivate() {
     lengthModalText.value = "";
     angleModalText.value = "";
@@ -618,9 +667,9 @@ function clearAll() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         lengthText.textContent = "Length (m): ";
         angleText.textContent = "Angle (deg): ";
-        memberArray = []; jointArray = []; pinArray = []; rollerArray = []; loadArray = [];
+        memberArray = []; jointArray = []; pinArray = []; rollerArray = []; loadArray = []; virtualArray = [];
         deleteTable();
-        loadText.value = ""; virtualText.value = ""; yieldText.value = ""; modOfEText.value = "";
+        loadText.value = ""; yieldText.value = ""; modOfEText.value = "";
         solveTrussActive = false;
         createBorder();
         uHistory.delAll();
@@ -648,7 +697,7 @@ function solveTruss() {
     let allForceLabels = [];
     let rL, pL;
     let fJX, fJY, sJX, sJY;
-    reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
+    reDrawCanvas(-1, -1, -1, -1, false, false, false, false, false);
     createBorder();
 
     if (solveTrussActive === false) {
@@ -690,6 +739,11 @@ function solveTruss() {
                 i.hasLoad = true;
             }
         }
+        for (let j of virtualArray) {
+            if (i.posX == j.posX && i.posY == j.posY) {
+                i.hasVirtualLoad = true;
+            }
+        }
     }
 
     memberArraySort = [...memberArray];
@@ -719,8 +773,17 @@ function solveTruss() {
         }
         else
             i.memberLabel = eJoint + sJoint;
-        i.jointA = i.memberLabel.charAt(0);
-        i.jointB = i.memberLabel.charAt(1);
+        if (i.memberLabel.length === 4) {
+            i.jointA = i.memberLabel.charAt(0) + i.memberLabel.charAt(1);
+            i.jointB = i.memberLabel.charAt(2) + i.memberLabel.charAt(3);
+        } else if (i.memberLabel.length === 3) {
+            i.jointA = i.memberLabel.charAt(0);
+            i.jointB = i.memberLabel.charAt(1) + i.memberLabel.charAt(2);
+        } else {
+            i.jointA = i.memberLabel.charAt(0);
+            i.jointB = i.memberLabel.charAt(1);
+        }
+
         allForceLabels.push(i.memberLabel);
     }
     for (let i = 0; i < 2 * jointArraySort.length; i++) {
@@ -757,6 +820,14 @@ function solveTruss() {
         for (let j of jointArraySort) {
             if (i.posX === j.posX && i.posY === j.posY) {
                 i.loadLabel = j.jointLabel;
+                break;
+            }
+        }
+    }
+    for (let i of virtualArray) {
+        for (let j of jointArraySort) {
+            if (i.posX === j.posX && i.posY === j.posY) {
+                i.virtualLabel = j.jointLabel;
                 break;
             }
         }
@@ -813,7 +884,7 @@ function solveTruss() {
                 loadCount += 2;
             }
         }
-        if (i.jointLabel === virtualText.value) {
+        if (i.hasVirtualLoad === true) {
             bV[cnt + 1] = 1;
         }
         for (let j of memberArraySort) {
@@ -890,7 +961,7 @@ function solveTruss() {
             cell3.textContent = memberArraySort[c].angle;
             cell4.textContent = Math.round(x[c] * 1000) / 1000;
             if (virtual == true)
-                cell5.textContent = Math.round(xV[c] * 10000) / 10000;
+                cell5.textContent = Math.round(xV[c] * 1000) / 1000;
             else
                 cell5.textContent = xV[c];
             if (memberArraySort[c].areaHSS != "-")
@@ -918,7 +989,7 @@ function solveTruss() {
             cell3.textContent = "-";
             cell4.textContent = Math.round(x[c] * 1000) / 1000;
             if (virtual == true)
-                cell5.textContent = Math.round(xV[c] * 10000) / 10000;
+                cell5.textContent = Math.round(xV[c] * 1000) / 1000;
             else
                 cell5.textContent = xV[c];
             cell6.textContent = "-";
@@ -1007,6 +1078,12 @@ function fLoadHov(x) {
         loadHov.style.color = "#000";
     else
         loadHov.style.color = "transparent";
+}
+function fVLoadHov(x) {
+    if (x)
+        vLoadHov.style.color = "#000";
+    else
+        vLoadHov.style.color = "transparent";
 }
 function fUndoHov(x) {
     if (x)
@@ -1160,7 +1237,7 @@ function findBestHSS(a, m, r) {
 
 function setHSS() {
     let areaFOS = 2, moiFOS = 3, yieldF = yieldText.value, rGyrCheck = 200, E = modOfEText.value, moi = 0;
-    if (yieldText.value != "" && !isNaN(parseInt(yieldText.value)) && modOfEText.value != "" && !isNaN(parseInt(modOfEText.value))) {
+    if (yieldText.value != "" && !isNaN(parseFloat(yieldText.value)) && modOfEText.value != "" && !isNaN(parseFloat(modOfEText.value))) {
         for (let i of memberArraySort) {
             i.areaHSS = (Math.abs(i.stressForce) * 1000) * areaFOS / yieldF;
             if (i.stressForce < 0) {
@@ -1334,6 +1411,21 @@ function remElements() {
             c++;
         }
     }
+    if (pass === false) {
+        c = 0;
+        for (let i of virtualArray) {
+            if (checkClose(parseInt(i.posY + 30), parseInt(i.posY), parseInt(i.posX), parseInt(i.posX), parseInt(mousePos.y), parseInt(mousePos.x))) {
+                cStartX = i.posX;
+                cStartY = i.posY;
+                cEndX = i.posX;
+                cEndY = i.posY;
+                pass = true;
+                type = "V";
+                break;
+            }
+            c++;
+        }
+    }
 
     if (pass === false) {
         canvas.style.cursor = "";
@@ -1343,8 +1435,8 @@ function remElements() {
         return [cStartX, cStartY, cEndX, cEndY, c, type];
     }
 }
-function reDrawCanvas(cStartX, cStartY, cEndX, cEndY, colM, colP, colR, colL) {
-    let newMember, newJoint, newPin, newRoller, newLoad;
+function reDrawCanvas(cStartX, cStartY, cEndX, cEndY, colM, colP, colR, colL, colV) {
+    let newMember, newJoint, newPin, newRoller, newLoad, newVLoad;
     context.clearRect(0, 0, canvas.width, canvas.height);
     for (let i of memberArray) {
         if (cStartX == i.startX && cStartY == i.startY && cEndX == i.endX && cEndY == i.endY && colM)
@@ -1377,6 +1469,13 @@ function reDrawCanvas(cStartX, cStartY, cEndX, cEndY, colM, colP, colR, colL) {
         else
             newLoad = new Load(i.posX, i.posY, i.mag, "#000000");
         newLoad.buildLoad();
+    }
+    for (let i of virtualArray) {
+        if (cStartX == i.posX && cEndX == i.posX && cStartY == i.posY && cEndY == i.posY && colV)
+            newVLoad = new VirtualLoad(i.posX, i.posY, "#264f22");
+        else
+            newVLoad = new VirtualLoad(i.posX, i.posY, "#53a54c");
+        newVLoad.buildLoad();
     }
 }
 
@@ -1445,7 +1544,7 @@ canvas.addEventListener("mousedown", (event) => {
                 if (loadText.value === "") {
                     errorModal.style.display = "block";
                     errorModalBody.textContent = "Please specify the load in the 'Load' textbox located in the top right corner!";
-                } else if (isNaN(parseInt(loadText.value))) {
+                } else if (isNaN(parseFloat(loadText.value))) {
                     errorModal.style.display = "block";
                     errorModalBody.textContent = "The load you have specified in the 'Load' textbox is not a valid entry! Enter a number in kilonewtons!";
                 } else {
@@ -1456,20 +1555,33 @@ canvas.addEventListener("mousedown", (event) => {
                 }
             }
         }
+    } else if (vLoadButtonActive) {
+        if (inJoint(false)) {
+            if (virtualArray.length === 1) {
+                errorModal.style.display = "block";
+                errorModalBody.textContent = "You cannot add more than one virtual load!";
+            } else {
+                uHistory.addHistory("V");
+                newVLoad = new VirtualLoad(currX, currY, "#53a54c");
+                newVLoad.buildLoad();
+                virtualArray.push(newVLoad);
+            }
+        }
     } else if (selectButtonActive) {
         let pos = remElements();
         if (pos[5] === "M") {
             pinClick = false;
             rollerClick = false;
             loadClick = false;
+            virtualLoadClick = false;
             if (pos[4] == currMemberClick && memberClick) {
-                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false);
+                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false, false);
                 lengthText.textContent = "Length (m): ";
                 angleText.textContent = "Angle (deg): ";
                 memberClick = false;
                 currMemberClick = -2;
             } else {
-                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], true, false, false, false);
+                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], true, false, false, false, false);
                 if (pos[4] !== -1) {
                     lengthText.textContent = "Length (m): " + Math.round(memberArray[pos[4]].len * 100) / 100;
                     angleText.textContent = "Angle (deg): " + Math.round(memberArray[pos[4]].angle * 10) / 10;
@@ -1481,14 +1593,15 @@ canvas.addEventListener("mousedown", (event) => {
             memberClick = false;
             rollerClick = false;
             loadClick = false;
+            virtualLoadClick = false;
             if (pos[4] == currPinClick && pinClick) {
-                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false);
+                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false, false);
                 lengthText.textContent = "Length (m): ";
                 angleText.textContent = "Angle (deg): ";
                 pinClick = false;
                 currPinClick = -2;
             } else {
-                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, true, false, false);
+                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, true, false, false, false);
                 pinClick = true;
                 currPinClick = pos[4];
             }
@@ -1496,14 +1609,15 @@ canvas.addEventListener("mousedown", (event) => {
             memberClick = false;
             pinClick = false;
             loadClick = false;
+            virtualLoadClick = false;
             if (pos[4] == currRollerClick && rollerClick) {
-                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false);
+                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false, false);
                 lengthText.textContent = "Length (m): ";
                 angleText.textContent = "Angle (deg): ";
                 rollerClick = false;
                 currRollerClick = -2;
             } else {
-                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, true, false);
+                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, true, false, false);
                 rollerClick = true;
                 currRollerClick = pos[4];
             }
@@ -1511,16 +1625,33 @@ canvas.addEventListener("mousedown", (event) => {
             memberClick = false;
             pinClick = false;
             rollerClick = false;
+            virtualLoadClick = false;
             if (pos[4] == currLoadClick && loadClick) {
-                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false);
+                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false, false);
                 lengthText.textContent = "Length (m): ";
                 angleText.textContent = "Angle (deg): ";
                 loadClick = false;
                 currLoadClick = -2;
             } else {
-                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, true);
+                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, true, false);
                 loadClick = true;
                 currLoadClick = pos[4];
+            }
+        } else if (pos[5] === "V") {
+            memberClick = false;
+            pinClick = false;
+            rollerClick = false;
+            loadClick = false;
+            if (pos[4] == currVirtualLoadClick && virtualLoadClick) {
+                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false, false);
+                lengthText.textContent = "Length (m): ";
+                angleText.textContent = "Angle (deg): ";
+                virtualLoadClick = false;
+                currVirtualLoadClick = -2;
+            } else {
+                reDrawCanvas(pos[0], pos[1], pos[2], pos[3], false, false, false, false, true);
+                virtualLoadClick = true;
+                currVirtualLoadClick = 0;
             }
         }
         createBorder();
@@ -1532,7 +1663,6 @@ canvas.addEventListener("mousemove", (event) => {
     event.stopPropagation();
 
     mousePos = getMousePos(event);
-    useCurr = false;
     if (memberJointButtonActive && lineBegin) {
         mHistory.restoreSnapShot();
         tempMember(mousePos.x, mousePos.y);
@@ -1571,29 +1701,29 @@ window.addEventListener("click", (e) => {
         textModal.style.display = "none";
 });
 modalButton.addEventListener("click", (e) => {
-    if (spanText.value === "" || isNaN(parseInt(spanText.value)) || parseFloat(spanText.value) <= 0) {
+    if (spanText.value === "" || isNaN(parseFloat(spanText.value)) || parseFloat(spanText.value) <= 0) {
         errorModal.style.display = "block";
         errorModalBody.textContent = "Please enter a valid span before proceeding!";
     } else if (modalButtonClickedOnce) {
-        if (parseInt(spanText.value) !== actualSize) {
+        if (parseFloat(spanText.value) !== actualSize) {
             startUp.style.display = "none";
-            actualSize = parseInt(spanText.value);
+            actualSize = parseFloat(spanText.value);
             clearAll();
         } else {
             startUp.style.display = "none";
         }
     } else {
         startUp.style.display = "none";
-        actualSize = parseInt(spanText.value);
+        actualSize = parseFloat(spanText.value);
         modalButtonClickedOnce = true;
     }
 });
 
 document.addEventListener("keydown", (e) => {
     if (selectButtonActive) {
-        if (e.which === 46 && (memberClick || pinClick || rollerClick || loadClick)) { // Delete key
+        if (e.which === 46 && (memberClick || pinClick || rollerClick || loadClick || virtualLoadClick)) { // Delete key
             e.preventDefault();
-            reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
+            reDrawCanvas(-1, -1, -1, -1, false, false, false, false, false);
             createBorder();
             uHistory.addHistory("D");
             if (memberClick) {
@@ -1632,8 +1762,11 @@ document.addEventListener("keydown", (e) => {
             } else if (loadClick) {
                 uHistory.addDHistory(loadArray[currLoadClick], "L");
                 loadArray.splice(currLoadClick, 1);
+            } else if (virtualLoadClick) {
+                uHistory.addDHistory(virtualArray[currVirtualLoadClick], "V");
+                virtualArray.splice(currVirtualLoadClick, 1);
             }
-            reDrawCanvas(-1, -1, -1, -1, false, false, false, false);
+            reDrawCanvas(-1, -1, -1, -1, false, false, false, false, false);
             createBorder();
             canvas.style.cursor = "";
             if (solveTrussActive) {
